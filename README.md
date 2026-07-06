@@ -1,7 +1,8 @@
-# NCE Lead Command Center
+# Racuda Alpha
 
-A lead generation + outreach CRM for Neural Cloud Enterprise. Runs locally
-against any Postgres database, or deployed on Vercel + Vercel Postgres.
+A lead generation + outreach CRM for Neural Cloud Enterprise. Runs on Vercel
+with Supabase as the database, GitHub as the staging/deploy pipeline — or
+locally against any Postgres database (including your Supabase project).
 
 What it does:
 
@@ -23,40 +24,65 @@ What it does:
 
 ## 1. Install & run locally (5 minutes)
 
-You need Python 3.10+ (python.org) and a Postgres database (a free
-[Neon](https://neon.tech) or local Postgres instance both work). Then, in
-this folder:
+You need Python 3.10+ (python.org) and a [Supabase](https://supabase.com)
+project (free tier is fine — Project Settings → Database → Connection string,
+use the **Transaction pooler** URI on port 6543). Then, in this folder:
 
 ```bash
 pip install -r requirements.txt
-export POSTGRES_URL="postgres://user:pass@host/dbname"   # or set in a .env you load yourself
+export POSTGRES_URL="postgresql://postgres.xxxx:PASSWORD@aws-0-region.pooler.supabase.com:6543/postgres"
 python app.py
 ```
 
 Open **http://127.0.0.1:8765** in your browser. That's the CRM.
 
 The app binds to 127.0.0.1 only — nothing on your machine can reach it from
-the network unless you deploy it. Outbound calls (source APIs, Gmail) work
-normally regardless, since that's independent of the bind address.
+the network unless you deploy it. Outbound calls (source APIs, Gmail,
+Supabase) work normally regardless, since that's independent of the bind
+address.
 
-## 1b. Deploy to Vercel
+## 1b. Deploy to Vercel + Supabase, with GitHub for staging
 
-1. Push this repo to GitHub, then **import it in Vercel** (New Project →
-   select the repo). Vercel auto-detects the Python app via `vercel.json` +
-   `api/index.py`.
-2. **Storage — add Vercel Postgres:** Project → Storage → Create Database →
-   Postgres. This sets `POSTGRES_URL` (and related) env vars automatically.
-3. **Environment variables** (Project → Settings → Environment Variables):
-   - `POSTGRES_URL` — set automatically by the Postgres integration above.
+**Architecture:** GitHub hosts the code and drives two Vercel environments —
+push to `staging` for a preview deployment to test against, merge to `main`
+for production. Supabase is the database for both (use two separate Supabase
+projects if you want staging data fully isolated from production).
+
+1. **Supabase:** create a project (or two — one for staging, one for
+   production) at supabase.com. Grab the **Transaction pooler** connection
+   string (port 6543) from Project Settings → Database — this is your
+   `POSTGRES_URL`.
+2. **Push to GitHub** (already done for this repo — see below), then
+   **import it in Vercel** (New Project → select the repo). Vercel
+   auto-detects the Python app via `vercel.json` + `api/index.py`.
+3. **Environment variables** (Project → Settings → Environment Variables —
+   set separately per Vercel environment: Production / Preview):
+   - `POSTGRES_URL` — your Supabase pooler connection string (production DB
+     for the Production environment, staging DB for Preview if using two).
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` — only
      needed if you want the Gmail bridge live on the deployed site (see
      step 3 below).
-4. Redeploy after adding env vars. First load will create tables
-   automatically (same `db.init()` as local).
+4. **Set the Production Branch to `main`** (Project → Settings → Git). Any
+   push to `staging` (or any other branch) automatically gets its own Preview
+   deployment URL — test there before merging to `main`.
+5. Redeploy after adding env vars. First load creates tables automatically
+   (same `db.init()` as local) in whichever Supabase project `POSTGRES_URL`
+   points to.
 
 Note the deployed app has no persistent local disk — everything (leads,
-templates, settings, the Gmail token) lives in Postgres, which is what makes
-it safe to redeploy or run across multiple serverless invocations.
+templates, settings, the Gmail token) lives in Supabase Postgres, which is
+what makes it safe to redeploy or run across multiple serverless invocations.
+
+### Working with staging
+
+```bash
+git checkout -b staging
+git push -u origin staging      # Vercel creates a Preview deployment automatically
+# ...make changes, push to staging, test on the preview URL...
+git checkout main
+git merge staging
+git push                        # promotes to production
+```
 
 ## 2. First pull
 

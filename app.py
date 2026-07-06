@@ -1,4 +1,4 @@
-"""NCE Lead Command Center — local server.
+"""Racuda Alpha — lead command center server.
 
 Run:  python app.py     then open http://127.0.0.1:8765
 """
@@ -14,7 +14,7 @@ import gmail_bridge
 from sources import REGISTRY, describe
 
 db.init()
-app = FastAPI(title="NCE Lead Command Center")
+app = FastAPI(title="Racuda Alpha")
 STATIC = Path(__file__).parent / "static"
 
 
@@ -223,5 +223,5 @@ app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n  NCE Lead Command Center -> http://127.0.0.1:8765\n")
+    print("\n  Racuda Alpha -> http://127.0.0.1:8765\n")
     uvicorn.run(app, host="127.0.0.1", port=8765)

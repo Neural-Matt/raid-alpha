@@ -1,4 +1,4 @@
-"""Postgres storage for the NCE Lead Command Center.
+"""Postgres storage for Racuda Alpha.
 
 Connects via POSTGRES_URL (Vercel Postgres convention) or DATABASE_URL.
 Works the same locally (point it at any Postgres instance) and once deployed.
