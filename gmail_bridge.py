@@ -75,6 +75,11 @@ def authorize_url() -> str:
     url, state = flow.authorization_url(
         access_type="offline", include_granted_scopes="true", prompt="consent")
     db.set_setting("gmail_oauth_state", state)
+    # PKCE: the code_verifier flow.authorization_url() just generated must be
+    # replayed on the *same* flow object at fetch_token() time, but the
+    # callback is a separate request (a fresh Flow instance) — persist it
+    # alongside state rather than relying on in-memory continuity.
+    db.set_setting("gmail_oauth_code_verifier", flow.code_verifier or "")
     return url
 
 
@@ -83,12 +88,15 @@ def handle_oauth_callback(query_string: str, state: str) -> None:
     saved_state = db.get_setting("gmail_oauth_state")
     if not saved_state or state != saved_state:
         raise RuntimeError("OAuth state mismatch — please retry authorization from Settings.")
+    code_verifier = db.get_setting("gmail_oauth_code_verifier") or None
     flow = Flow.from_client_config(
-        _client_config(), scopes=SCOPES, redirect_uri=_redirect_uri(), state=state)
+        _client_config(), scopes=SCOPES, redirect_uri=_redirect_uri(), state=state,
+        code_verifier=code_verifier)
     authorization_response = f"{_redirect_uri()}?{query_string}"
     flow.fetch_token(authorization_response=authorization_response)
     db.set_setting("gmail_token", flow.credentials.to_json())
     db.set_setting("gmail_oauth_state", "")
+    db.set_setting("gmail_oauth_code_verifier", "")
 
 
 def _get_service():
