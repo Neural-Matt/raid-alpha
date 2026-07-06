@@ -1,4 +1,4 @@
-# Racuda Alpha
+# Raid Alpha
 
 A lead generation + outreach CRM for Neural Cloud Enterprise. Runs on Vercel
 with Supabase as the database, GitHub as the staging/deploy pipeline — or
@@ -67,6 +67,10 @@ projects if you want staging data fully isolated from production).
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` — only
      needed if you want the Gmail bridge live on the deployed site (see
      step 3 below).
+   - `GEMINI_API_KEY` — only needed for the service-matching bot (see step 3b).
+   - `CRON_SECRET` — any random string you generate yourself. Locks down the
+     scheduled-run endpoint (see below) so only Vercel's own cron trigger can
+     call it.
 4. **Set the Production Branch to `main`** (Project → Settings → Git). Any
    push to `staging` (or any other branch) automatically gets its own Preview
    deployment URL — test there before merging to `main`.
@@ -88,6 +92,17 @@ git checkout main
 git merge staging
 git push                        # promotes to production
 ```
+
+### Scheduled runs (Vercel Cron)
+
+Once deployed, `vercel.json` schedules a daily run of every source + a Gmail
+sync at 06:00 UTC via `GET /api/cron/run-all` — you don't have to press "Run
+all sources" yourself every day. Set a `CRON_SECRET` env var (any random
+string) so the endpoint only responds to Vercel's own scheduled trigger,
+which automatically sends it as a Bearer token. Change the schedule by
+editing the cron `schedule` (standard cron syntax) in `vercel.json`. Note:
+Vercel's Hobby (free) plan limits cron jobs to once-daily triggers — this is
+already within that limit.
 
 ## 2. First pull
 

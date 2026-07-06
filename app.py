@@ -1,7 +1,8 @@
-"""Racuda Alpha — lead command center server.
+"""Raid Alpha — lead command center server.
 
 Run:  python app.py     then open http://127.0.0.1:8765
 """
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -15,7 +16,7 @@ import gmail_bridge
 from sources import REGISTRY, describe
 
 db.init()
-app = FastAPI(title="Racuda Alpha")
+app = FastAPI(title="Raid Alpha")
 STATIC = Path(__file__).parent / "static"
 
 
@@ -84,16 +85,17 @@ def api_sources():
     return describe()
 
 
-@app.post("/api/sources/{key}/run")
-def api_run_source(key: str):
+def _run_source(key: str) -> dict:
+    """Pull + score + match one source. Returns a plain dict (never a Response)
+    so it can be reused by both the interactive endpoint and the cron job."""
     mod = REGISTRY.get(key)
     if not mod:
-        return JSONResponse({"error": "unknown source"}, status_code=404)
+        return {"error": "unknown source"}
     settings = db.all_settings()
     try:
         raw_leads = mod.pull(settings)
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
+        return {"error": str(e)}
 
     added, skipped = 0, 0
     new_lead_ids = []
@@ -123,6 +125,36 @@ def api_run_source(key: str):
                 })
 
     return {"added": added, "duplicates_skipped": skipped, "fetched": len(raw_leads)}
+
+
+@app.post("/api/sources/{key}/run")
+def api_run_source(key: str):
+    if key not in REGISTRY:
+        return JSONResponse({"error": "unknown source"}, status_code=404)
+    result = _run_source(key)
+    if "error" in result:
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/cron/run-all")
+def api_cron_run_all(request: Request):
+    """Scheduled entrypoint for Vercel Cron: runs every source + a Gmail sync.
+
+    Vercel automatically sends `Authorization: Bearer <CRON_SECRET>` on
+    cron-triggered requests when an env var named exactly CRON_SECRET is set
+    — set one to stop this (otherwise-public) endpoint being triggerable by
+    anyone who finds the URL.
+    """
+    secret = os.environ.get("CRON_SECRET")
+    if secret and request.headers.get("authorization") != f"Bearer {secret}":
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    results = {key: _run_source(key) for key in REGISTRY}
+    try:
+        gmail_result = gmail_bridge.sync()
+    except Exception as e:
+        gmail_result = {"error": str(e)}
+    return {"sources": results, "gmail": gmail_result}
 
 
 # ---------------- services ----------------
@@ -313,5 +345,5 @@ app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n  Racuda Alpha -> http://127.0.0.1:8765\n")
+    print("\n  Raid Alpha -> http://127.0.0.1:8765\n")
     uvicorn.run(app, host="127.0.0.1", port=8765)

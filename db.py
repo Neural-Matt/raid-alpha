@@ -1,4 +1,4 @@
-"""Postgres storage for Racuda Alpha.
+"""Postgres storage for Raid Alpha.
 
 Connects via POSTGRES_URL (Vercel Postgres convention) or DATABASE_URL.
 Works the same locally (point it at any Postgres instance) and once deployed.
@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS leads (
     matched_service TEXT DEFAULT '',
     match_score INTEGER DEFAULT 0,
     match_reasoning TEXT DEFAULT '',
+    score_breakdown TEXT DEFAULT '[]',
+    value_note TEXT DEFAULT '',
     created_at TEXT,
     updated_at TEXT
 );
@@ -146,6 +148,8 @@ def init() -> None:
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS matched_service TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS match_score INTEGER DEFAULT 0")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS match_reasoning TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS score_breakdown TEXT DEFAULT '[]'")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS value_note TEXT DEFAULT ''")
     cur.execute("SELECT COUNT(*) AS c FROM templates")
     if cur.fetchone()["c"] == 0:
         for name, body in DEFAULT_TEMPLATES:
@@ -190,7 +194,8 @@ def get_lead(lead_id):
 
 LEAD_FIELDS = ["org", "contact", "role", "email", "country", "segment", "source",
                "stage", "score", "tentative_value", "trigger", "notes", "url", "follow_up",
-               "matched_service", "match_score", "match_reasoning"]
+               "matched_service", "match_score", "match_reasoning",
+               "score_breakdown", "value_note"]
 
 
 def insert_lead(data: dict, log: str = "Lead created"):
@@ -203,6 +208,7 @@ def insert_lead(data: dict, log: str = "Lead created"):
     values["score"] = int(data.get("score") or 0)
     values["tentative_value"] = int(data.get("tentative_value") or 0)
     values["match_score"] = int(data.get("match_score") or 0)
+    values["score_breakdown"] = data.get("score_breakdown") or "[]"
     values["stage"] = data.get("stage") or "New"
     try:
         cur.execute(

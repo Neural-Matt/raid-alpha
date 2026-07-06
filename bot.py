@@ -1,4 +1,4 @@
-"""Racuda Alpha's intelligent opportunity-matching bot.
+"""Raid Alpha's intelligent opportunity-matching bot.
 
 Uses Google's Gemini API (free tier, no card required — get a key at
 https://aistudio.google.com/apikey) to decide which of your defined

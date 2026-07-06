@@ -8,6 +8,7 @@ inserted into the pipeline. This assigns:
 """
 from __future__ import annotations
 import datetime
+import json
 
 SEGMENT_KEYWORDS = {
     "NGO / Donor (M&E, data collection)": [
@@ -87,7 +88,12 @@ def classify_segment(text: str) -> tuple[str, int]:
 
 
 def score_lead(raw: dict) -> dict:
-    """Take a raw lead dict from a source and return an enriched lead dict."""
+    """Take a raw lead dict from a source and return an enriched lead dict.
+
+    Also attaches `score_breakdown` (a JSON list of {label, points} the score
+    was built from) and `value_note` (a one-line explanation of the tentative
+    value) so the UI can show its work instead of presenting a bare number.
+    """
     blob = " ".join(str(raw.get(k, "")) for k in
                     ("org", "trigger", "notes", "role", "segment")).lower()
 
@@ -97,14 +103,34 @@ def score_lead(raw: dict) -> dict:
     else:
         segment, hits = classify_segment(blob)
 
-    score = SOURCE_WEIGHT.get(raw.get("source", ""), 15)
-    score += min(hits * 8, 32)                                   # topical fit
-    score += sum(6 for kw in HOT_KEYWORDS if kw in blob)         # demand signals
+    breakdown = []
+    source = raw.get("source") or "unknown"
+    base = SOURCE_WEIGHT.get(raw.get("source", ""), 15)
+    score = base
+    breakdown.append({"label": f"Source signal ({source})", "points": base})
+
+    fit_pts = min(hits * 8, 32)
+    score += fit_pts
+    if fit_pts:
+        breakdown.append({"label": f"Topical fit ({hits} keyword match{'es' if hits != 1 else ''})",
+                           "points": fit_pts})
+
+    hot_hits = sum(1 for kw in HOT_KEYWORDS if kw in blob)
+    hot_pts = hot_hits * 6
+    score += hot_pts
+    if hot_pts:
+        breakdown.append({"label": f"Demand signals ({hot_hits} hot keyword{'s' if hot_hits != 1 else ''})",
+                           "points": hot_pts})
+
     country = str(raw.get("country", "")).lower()
     if any(c in country for c in PRIORITY_COUNTRIES):
         score += 12                                              # regional advantage
+        breakdown.append({"label": "Priority region", "points": 12})
+
     if raw.get("email"):
         score += 8                                               # reachable now
+        breakdown.append({"label": "Contact email available", "points": 8})
+
     posted = raw.get("posted_date")
     if posted:
         try:
@@ -112,11 +138,17 @@ def score_lead(raw: dict) -> dict:
                    datetime.date.fromisoformat(str(posted)[:10])).days
             if age <= 7:
                 score += 10
+                breakdown.append({"label": "Posted within 7 days", "points": 10})
             elif age <= 30:
                 score += 5
+                breakdown.append({"label": "Posted within 30 days", "points": 5})
         except ValueError:
             pass
-    score = max(5, min(100, score))
+
+    clamped = max(5, min(100, score))
+    if clamped != score:
+        breakdown.append({"label": "Clamped to 5-100 range", "points": clamped - score})
+    score = clamped
 
     lo, hi = SEGMENT_VALUE.get(segment, (8000, 40000))
     tentative = int(lo + (hi - lo) * (score / 100))
@@ -125,5 +157,10 @@ def score_lead(raw: dict) -> dict:
     lead["segment"] = segment
     lead["score"] = score
     lead["tentative_value"] = tentative
+    lead["score_breakdown"] = json.dumps(breakdown)
+    lead["value_note"] = (
+        f"{segment} deals typically run ${lo:,}-${hi:,}; a fit score of {score}/100 "
+        f"places this one at ${tentative:,}."
+    )
     lead.setdefault("stage", "New")
     return lead
