@@ -56,6 +56,7 @@ SEGMENT_VALUE = {
 SOURCE_WEIGHT = {
     "ReliefWeb": 30,       # live consultancy/tender postings = active demand
     "World Bank": 25,      # funded active projects = budget exists
+    "ZPPA": 28,            # open government tender = active, budgeted demand
     "RSS feed": 20,
     "Apollo": 15,          # contact data, no explicit demand signal
     "Hunter": 12,

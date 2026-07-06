@@ -164,6 +164,9 @@
           <input id="set_reliefweb_query"></label>
         <label style="grid-column:1/-1">World Bank search terms (comma-separated)
           <input id="set_worldbank_terms" placeholder="statistics, health systems, monitoring"></label>
+        <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated)
+          <input id="set_zppa_query" placeholder="monitoring and evaluation, data collection, dashboard…"></label>
+        <label>ZPPA months back<input id="set_zppa_months_back" placeholder="1"></label>
       </div>
       <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
     </div>
@@ -432,7 +435,8 @@ async function newTemplate(){await api("/api/templates",{method:"POST",
 
 // ---------- settings ----------
 const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_locations",
-  "hunter_domains","rss_urls","rss_keywords","reliefweb_query","worldbank_terms"];
+  "hunter_domains","rss_urls","rss_keywords","reliefweb_query","worldbank_terms",
+  "zppa_query","zppa_months_back"];
 async function loadSettings(){
   settings=await api("/api/settings");
   SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});

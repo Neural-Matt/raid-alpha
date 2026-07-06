@@ -9,6 +9,7 @@ What it does:
 1. **Pull leads** at the press of a button from legal, official sources:
    - ReliefWeb API (live M&E / data-collection consultancy postings)
    - World Bank Projects API (active funded projects in your region)
+   - ZPPA OCDS bulk data (open Zambian government tenders, filtered to your keywords)
    - Any RSS/Atom feeds you add (tender boards, Google Alerts = the widest net)
    - Apollo.io People Search (decision-maker contacts, your API key)
    - Hunter.io Domain Search (published emails at target companies, your API key)
@@ -86,8 +87,8 @@ git push                        # promotes to production
 
 ## 2. First pull
 
-Go to **Sources → Run all sources**. ReliefWeb and World Bank need no keys, so
-you'll have a scored pipeline within a minute.
+Go to **Sources → Run all sources**. ReliefWeb, World Bank, and ZPPA need no
+keys, so you'll have a scored pipeline within a minute.
 
 To widen the net:
 
@@ -95,9 +96,17 @@ To widen the net:
   like `"request for proposals" "monitoring and evaluation"` or
   `"data analytics" tender Zambia`, set *Deliver to: RSS feed*, and paste the
   feed URLs into **Settings → RSS feed URLs**. Now Google's index feeds your CRM.
+  This is also the practical way to track broader international tender
+  aggregators (e.g. dgMarket) — they block automated scraping/API access, but
+  their listings are indexable, so a Google Alert on your target keywords
+  picks them up anyway.
 - **Apollo** (apollo.io → Settings → API): paste your API key, set target titles
   and locations in Settings, then run the Apollo source.
 - **Hunter** (hunter.io → API): paste your key and list target-company domains.
+- **ZPPA**: pulls the most recent month of Zambia's official government tender
+  data and keeps only tenders matching **Settings → ZPPA keyword filter**
+  (defaults to M&E/data/IT terms — broaden it if you want wider coverage;
+  ZPPA covers every sector, so an empty filter would flood your pipeline).
 
 ## 3. Gmail bridge setup (one-time, ~5 minutes)
 

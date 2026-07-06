@@ -9,11 +9,12 @@ Each source module exposes:
 A raw lead dict can contain: org, contact, role, email, country, trigger,
 notes, url, source, posted_date, segment, dedupe_key.
 """
-from . import reliefweb, worldbank, rss_feeds, apollo, hunter
+from . import reliefweb, worldbank, rss_feeds, apollo, hunter, zppa
 
 REGISTRY = {
     "reliefweb": reliefweb,
     "worldbank": worldbank,
+    "zppa": zppa,
     "rss": rss_feeds,
     "apollo": apollo,
     "hunter": hunter,
