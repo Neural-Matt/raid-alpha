@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# local secrets / local-only run artifacts
+credentials.json
+token.json
+crm.db
+.env
+.env.local
+
+# Vercel
+.vercel
+
+# editor
+.vscode/
+.idea/
+.claude/

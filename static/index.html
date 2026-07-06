@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NCE Lead Command Center</title>
+<style>
+  :root{
+    --ink:#0c2b21; --ink2:#123f30; --paper:#f4f4f0; --card:#ffffff;
+    --line:#ddddd5; --mut:#6b6b60; --acc:#0e6e4f; --accsoft:#e3f0ea;
+    --amber:#b45309; --ambersoft:#fef3c7; --red:#b91c1c;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box} body{margin:0;font-family:var(--sans);background:var(--paper);color:#1c1c17}
+  header{background:var(--ink);color:#eef6f1;padding:16px 24px}
+  .wrap{max-width:1100px;margin:0 auto}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7fc8a9}
+  h1{margin:2px 0 0;font-size:20px}
+  .stats{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px}
+  .stat b{display:block;font-size:20px;font-family:var(--mono)}
+  .stat span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#9fd4bb}
+  .stat.warn b{color:#fbbf24}
+  nav{background:var(--ink2);padding:0 24px}
+  nav .wrap{display:flex;gap:4px;overflow-x:auto}
+  nav button{background:none;border:none;color:#cfe8db;padding:10px 14px;font-size:13px;cursor:pointer;border-radius:8px 8px 0 0;white-space:nowrap}
+  nav button.on{background:var(--paper);color:var(--ink);font-weight:600}
+  main{max-width:1100px;margin:0 auto;padding:20px 24px 80px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grow{flex:1;min-width:160px}
+  button.btn{background:var(--acc);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  button.btn:disabled{opacity:.5;cursor:default}
+  button.ghost{background:#fff;color:#333;border:1px solid #bbb;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer}
+  button.ghost:hover{background:#fafaf5}
+  .chip{border:1px solid #c8c8bd;background:#fff;border-radius:99px;padding:4px 10px;font-size:11px;cursor:pointer;color:#555}
+  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pill{display:inline-block;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:600}
+  .score{font-family:var(--mono);font-weight:700;font-size:13px;min-width:34px;text-align:center;border-radius:8px;padding:4px 0}
+  .s-hi{background:#dcfce7;color:#166534}.s-md{background:#fef9c3;color:#854d0e}.s-lo{background:#f1f1ea;color:#777}
+  .lead{display:flex;gap:10px;align-items:center;cursor:pointer}
+  .lead:hover{background:#fbfbf7}
+  .lead .org{font-weight:600;font-size:14px}
+  .lead .sub{font-size:11.5px;color:var(--mut)}
+  .val{font-family:var(--mono);font-size:12.5px;color:#31513f;min-width:76px;text-align:right}
+  input,select,textarea{font:inherit;font-size:13px;border:1px solid #c9c9be;border-radius:8px;padding:7px 9px;background:#fff;width:100%}
+  textarea{resize:vertical}
+  label{font-size:11px;color:var(--mut);display:block}
+  label>*{margin-top:3px}
+  .drawer-bg{position:fixed;inset:0;background:rgba(10,20,15,.45);display:flex;justify-content:flex-end;z-index:40}
+  .drawer{background:#fff;width:min(620px,100%);height:100%;overflow-y:auto;padding:20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:600px){.grid2{grid-template-columns:1fr}}
+  .mono{font-family:var(--mono)}
+  .muted{color:var(--mut);font-size:12px}
+  .todo{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid #eee}
+  .todo.done .txt{text-decoration:line-through;color:#999}
+  .todo .due{font-family:var(--mono);font-size:11px;color:#8a6d3b;min-width:80px}
+  .todo .due.over{color:var(--red);font-weight:700}
+  .msg{border-left:3px solid #ccc;padding:6px 10px;margin:6px 0;font-size:12.5px;background:#fafaf6;border-radius:0 8px 8px 0}
+  .msg.in{border-color:var(--acc)}
+  .msg.out{border-color:#b8b8ad}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;padding:9px 18px;border-radius:99px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .src-status{font-family:var(--mono);font-size:11.5px;color:#31513f;margin-top:6px;min-height:14px}
+  .banner{background:var(--ambersoft);border:1px solid #f3d9a4;border-radius:10px;padding:10px 14px;font-size:12.5px;margin-bottom:12px}
+  h2{font-size:16px;margin:6px 0 12px}
+  .spin{display:inline-block;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .empty{border:1px dashed #c9c9be;border-radius:12px;padding:26px;text-align:center;color:var(--mut);font-size:13px;background:#fff}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">Neural Cloud Enterprise</div>
+  <h1>Lead Command Center</h1>
+  <div class="stats" id="stats"></div>
+</div></header>
+
+<nav><div class="wrap">
+  <button data-tab="pipeline" class="on">Pipeline</button>
+  <button data-tab="sources">Sources</button>
+  <button data-tab="todos">To-dos <span id="todoBadge"></span></button>
+  <button data-tab="templates">Templates</button>
+  <button data-tab="settings">Settings</button>
+</div></nav>
+
+<main>
+  <!-- PIPELINE -->
+  <section id="tab-pipeline">
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn" onclick="openAdd()">+ Add lead</button>
+      <input class="grow" id="search" placeholder="Search org, contact, country…" oninput="renderLeads()">
+      <div class="row" id="stageChips"></div>
+    </div>
+    <div id="leadList"></div>
+  </section>
+
+  <!-- SOURCES -->
+  <section id="tab-sources" hidden>
+    <div class="banner">These pullers use official public APIs and licensed providers only —
+      ReliefWeb and World Bank open APIs, plus Apollo/Hunter with your own keys, plus any
+      RSS/Google-Alerts feeds you add. New finds are auto-scored, valued and de-duplicated
+      into the pipeline.</div>
+    <div id="sourceList"></div>
+    <div class="card"><b style="font-size:14px">Run everything</b>
+      <p class="muted" style="margin:6px 0 10px">Runs all configured sources back-to-back, then a Gmail sync.</p>
+      <button class="btn" id="runAllBtn" onclick="runAll()">▶ Run all sources</button>
+      <div class="src-status" id="runAllStatus"></div>
+    </div>
+  </section>
+
+  <!-- TODOS -->
+  <section id="tab-todos" hidden>
+    <div class="card">
+      <div class="row">
+        <input class="grow" id="newTodo" placeholder="Add a to-do… (Enter to save)"
+          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodo(this.value.trim());this.value=''}">
+        <input type="date" id="newTodoDue" style="width:150px">
+        <button class="ghost" onclick="const t=document.getElementById('newTodo');if(t.value.trim()){addTodo(t.value.trim());t.value=''}">Add</button>
+        <button class="ghost" onclick="syncGmail(this)">↻ Scan Gmail for tasks</button>
+      </div>
+    </div>
+    <div id="todoList" class="card"></div>
+  </section>
+
+  <!-- TEMPLATES -->
+  <section id="tab-templates" hidden>
+    <div class="card">
+      <label style="max-width:280px">Your name (fills {{sender_name}})
+        <input id="senderName" onchange="saveSettings({sender_name:this.value})"></label>
+      <p class="muted" style="margin-top:8px">Merge fields:
+        <span class="mono">{{org}} {{first_name}} {{country}} {{trigger}} {{sender_name}}</span></p>
+    </div>
+    <div id="tplList"></div>
+    <button class="ghost" onclick="newTemplate()">+ New template</button>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" hidden>
+    <div class="card">
+      <h2>Gmail bridge</h2>
+      <p class="muted" id="gmailStatus">Checking…</p>
+      <button class="ghost" id="gmailConnectBtn" onclick="location.href='/api/gmail/authorize'" hidden>Connect Gmail</button>
+      <p class="muted">One-time setup: Google Cloud Console → enable Gmail API → OAuth <b>Web
+        application</b> client → set <span class="mono">GOOGLE_CLIENT_ID</span>,
+        <span class="mono">GOOGLE_CLIENT_SECRET</span> and <span class="mono">GOOGLE_REDIRECT_URI</span>
+        as environment variables wherever the app runs, then click Connect Gmail. Full steps are in
+        the README.</p>
+    </div>
+    <div class="card">
+      <h2>Source configuration</h2>
+      <div class="grid2">
+        <label>Apollo API key<input id="set_apollo_api_key" type="password"></label>
+        <label>Hunter API key<input id="set_hunter_api_key" type="password"></label>
+        <label>Apollo target titles (comma-separated)<input id="set_apollo_titles" placeholder="M&E Manager, COO, IT Director…"></label>
+        <label>Apollo target locations<input id="set_apollo_locations" placeholder="Zambia, Kenya, South Africa…"></label>
+        <label style="grid-column:1/-1">Hunter target domains (one per line)
+          <textarea id="set_hunter_domains" rows="3" placeholder="targetcompany.com&#10;anotherco.org"></textarea></label>
+        <label style="grid-column:1/-1">RSS / Google Alerts feed URLs (one per line)
+          <textarea id="set_rss_urls" rows="4" placeholder="https://www.google.com/alerts/feeds/…&#10;https://reliefweb.int/jobs/rss.xml"></textarea></label>
+        <label style="grid-column:1/-1">RSS keyword filter (comma-separated)
+          <input id="set_rss_keywords" placeholder="m&e, baseline, dashboard, tender, rfp"></label>
+        <label style="grid-column:1/-1">ReliefWeb query override (optional)
+          <input id="set_reliefweb_query"></label>
+        <label style="grid-column:1/-1">World Bank search terms (comma-separated)
+          <input id="set_worldbank_terms" placeholder="statistics, health systems, monitoring"></label>
+      </div>
+      <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
+    </div>
+  </section>
+</main>
+
+<div id="drawerHost"></div>
+<div id="toastHost"></div>
+
+<script>
+const STAGES=["New","Researched","Contacted","Replied","Meeting","Proposal","Won","Lost"];
+const STAGE_C={New:"#e7e7df,#555",Researched:"#dbeafe,#1e40af",Contacted:"#fef3c7,#92400e",
+  Replied:"#ede9fe,#5b21b6",Meeting:"#d1fae5,#065f46",Proposal:"#ccfbf1,#115e59",
+  Won:"#16a34a,#fff",Lost:"#a8a29e,#fff"};
+const SEGMENTS=["NGO / Donor (M&E, data collection)","Financial services (BI, reporting)",
+  "Corporate (analytics, automation)","Public sector","Migration / modernization",
+  "Training & capacity building","Platform / product"];
+let leads=[],templates=[],settings={},stageFilter="All";
+const $=id=>document.getElementById(id);
+const api=(url,opt)=>fetch(url,opt?Object.assign({headers:{'Content-Type':'application/json'}},opt):undefined).then(r=>r.json());
+const money=n=>"$"+Number(n||0).toLocaleString();
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;
+  $("toastHost").append(t);setTimeout(()=>t.remove(),2400)}
+function pill(stage){const[bg,fg]=(STAGE_C[stage]||STAGE_C.New).split(",");
+  return `<span class="pill" style="background:${bg};color:${fg}">${stage}</span>`}
+function scoreCls(s){return s>=65?"s-hi":s>=40?"s-md":"s-lo"}
+
+// ---------- tabs ----------
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  document.querySelectorAll("main>section").forEach(s=>s.hidden=true);
+  $("tab-"+b.dataset.tab).hidden=false;
+  if(b.dataset.tab==="todos")loadTodos();
+});
+
+// ---------- stats ----------
+async function loadStats(){const s=await api("/api/stats");
+  $("stats").innerHTML=`
+    <div class="stat"><b>${s.active}</b><span>active leads</span></div>
+    <div class="stat"><b>${money(s.pipeline_value)}</b><span>pipeline (tentative)</span></div>
+    <div class="stat ${s.followups_due?'warn':''}"><b>${s.followups_due}</b><span>follow-ups due</span></div>
+    <div class="stat ${s.todos_open?'warn':''}"><b>${s.todos_open}</b><span>open to-dos</span></div>
+    <div class="stat"><b>${s.reply_rate}%</b><span>reply rate</span></div>
+    <div class="stat"><b>${s.won} / ${money(s.won_value)}</b><span>won</span></div>`;
+  $("todoBadge").textContent=s.todos_open?`(${s.todos_open})`:"";
+}
+
+// ---------- pipeline ----------
+function chips(){$("stageChips").innerHTML=["All",...STAGES].map(s=>
+  `<span class="chip ${stageFilter===s?'on':''}" onclick="stageFilter='${s}';chips();renderLeads()">${s}</span>`).join("")}
+async function loadLeads(){leads=await api("/api/leads");renderLeads();loadStats()}
+function renderLeads(){
+  const q=($("search").value||"").toLowerCase();
+  const list=leads.filter(l=>(stageFilter==="All"||l.stage===stageFilter))
+    .filter(l=>!q||[l.org,l.contact,l.country,l.segment,l.source].join(" ").toLowerCase().includes(q));
+  if(!leads.length){$("leadList").innerHTML=
+    `<div class="empty">Pipeline is empty. Head to <b>Sources</b> and hit <b>Run all sources</b> — leads arrive pre-scored and valued.</div>`;return}
+  $("leadList").innerHTML=list.map(l=>{
+    const over=l.follow_up&&l.follow_up<=today()&&!["Won","Lost"].includes(l.stage);
+    return `<div class="card lead" onclick="openLead('${l.id}')">
+      <div class="score ${scoreCls(l.score)}" title="Fit score">${l.score}</div>
+      <div class="grow"><div class="org">${esc(l.org)}</div>
+        <div class="sub">${esc(l.contact||"")}${l.role?" · "+esc(l.role):""}${l.country?" · "+esc(l.country):""}
+        ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}</div></div>
+      ${over?`<span class="pill" style="background:#fee2e2;color:#991b1b">follow up</span>`:""}
+      <div class="val" title="Tentative value">${money(l.tentative_value)}</div>
+      ${pill(l.stage)}</div>`}).join("")
+    ||`<div class="empty">No leads match this filter.</div>`;
+}
+
+// ---------- add lead ----------
+function openAdd(){
+  drawer(`<h2>Add lead</h2>
+    <div class="grid2">
+      <label>Organisation *<input id="f_org"></label>
+      <label>Contact<input id="f_contact"></label>
+      <label>Role<input id="f_role"></label>
+      <label>Email<input id="f_email"></label>
+      <label>Country<input id="f_country"></label>
+      <label>Segment<select id="f_segment">${SEGMENTS.map(s=>`<option>${s}</option>`).join("")}</select></label>
+      <label style="grid-column:1/-1">Trigger (why now?)<input id="f_trigger" placeholder="tender, new grant, job posting…"></label>
+      <label style="grid-column:1/-1">Notes<textarea id="f_notes" rows="2"></textarea></label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" onclick="saveNewLead()">Save — auto-score</button>
+      <button class="ghost" onclick="closeDrawer()">Cancel</button>
+    </div>`);
+}
+async function saveNewLead(){
+  const org=$("f_org").value.trim();if(!org)return toast("Organisation is required");
+  await api("/api/leads",{method:"POST",body:JSON.stringify({org,
+    contact:$("f_contact").value,role:$("f_role").value,email:$("f_email").value,
+    country:$("f_country").value,segment:$("f_segment").value,
+    trigger:$("f_trigger").value,notes:$("f_notes").value})});
+  closeDrawer();toast("Lead added & scored");loadLeads();
+}
+
+// ---------- lead drawer ----------
+async function openLead(id){
+  const l=await api("/api/leads/"+id);
+  const tplOpts=templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  drawer(`
+    <div class="row"><h2 class="grow" style="margin:0">${esc(l.org)}</h2>
+      <button class="ghost" onclick="closeDrawer()">✕</button></div>
+    <div class="row" style="margin:8px 0 14px">
+      <div class="score ${scoreCls(l.score)}">${l.score}</div>
+      <span class="mono muted">${money(l.tentative_value)} tentative</span>
+      ${pill(l.stage)}<span class="muted">${esc(l.source||"")}</span>
+      ${l.url?`<a href="${esc(l.url)}" target="_blank" style="font-size:12px">source link ↗</a>`:""}
+    </div>
+    <div class="grid2">
+      <label>Stage<select id="d_stage" onchange="patchLead('${l.id}',{stage:this.value},'Stage → '+this.value)">
+        ${STAGES.map(s=>`<option ${s===l.stage?"selected":""}>${s}</option>`).join("")}</select></label>
+      <label>Next follow-up<input type="date" id="d_fu" value="${l.follow_up||""}"
+        onchange="patchLead('${l.id}',{follow_up:this.value},'Follow-up set: '+this.value)"></label>
+      <label>Contact<input value="${esc(l.contact)}" onchange="patchLead('${l.id}',{contact:this.value})"></label>
+      <label>Role<input value="${esc(l.role)}" onchange="patchLead('${l.id}',{role:this.value})"></label>
+      <label>Email<input id="d_email" value="${esc(l.email)}" onchange="patchLead('${l.id}',{email:this.value})"></label>
+      <label>Country<input value="${esc(l.country)}" onchange="patchLead('${l.id}',{country:this.value})"></label>
+      <label>Tentative value (USD)<input type="number" value="${l.tentative_value}"
+        onchange="patchLead('${l.id}',{tentative_value:this.value},'Value adjusted to $'+this.value)"></label>
+      <label>Segment<select onchange="patchLead('${l.id}',{segment:this.value})">
+        ${SEGMENTS.map(s=>`<option ${s===l.segment?"selected":""}>${s}</option>`).join("")}</select></label>
+      <label style="grid-column:1/-1">Trigger<input id="d_trigger" value="${esc(l.trigger)}"
+        onchange="patchLead('${l.id}',{trigger:this.value})"></label>
+      <label style="grid-column:1/-1">Notes<textarea rows="2"
+        onchange="patchLead('${l.id}',{notes:this.value})">${esc(l.notes)}</textarea></label>
+    </div>
+
+    <div class="card" style="margin-top:14px;background:#f7faf8">
+      <b style="font-size:13px">✉ Email via Gmail</b>
+      <div class="row" style="margin-top:8px">
+        <select id="d_tpl" class="grow">${tplOpts}</select>
+        <button class="ghost" onclick="genDraft('${l.id}')">Generate draft</button>
+      </div>
+      <div id="draftBox" hidden style="margin-top:8px">
+        <label>Subject<input id="d_subject"></label>
+        <label style="margin-top:6px">Body<textarea id="d_body" rows="9" class="mono"></textarea></label>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="sendBtn" onclick="sendEmail('${l.id}')">Send from my Gmail</button>
+          <button class="ghost" onclick="navigator.clipboard.writeText($('d_subject').value+'\\n\\n'+$('d_body').value);toast('Copied')">Copy instead</button>
+        </div>
+      </div>
+      <div style="margin-top:10px" id="threadBox">
+        ${(l.emails||[]).map(m=>`<div class="msg ${m.direction}">
+          <b>${m.direction==="in"?"⇦ From lead":"⇨ Sent"}</b>
+          <span class="muted mono">${esc((m.date||"").slice(0,16).replace("T"," "))}</span><br>
+          <b>${esc(m.subject||"")}</b> — ${esc(m.snippet||"")}</div>`).join("")
+          ||`<p class="muted">No messages recorded yet. "Scan Gmail" (To-dos tab) links existing threads by email address.</p>`}
+      </div>
+    </div>
+
+    ${(l.todos&&l.todos.length)?`<div class="card" style="margin-top:10px"><b style="font-size:13px">Open to-dos</b>
+      ${l.todos.map(t=>`<div class="todo"><div class="due">${esc(t.due||"")}</div><div class="txt grow">${esc(t.text)}</div></div>`).join("")}</div>`:""}
+
+    <div style="margin-top:14px">
+      <div class="row"><input class="grow" id="d_act" placeholder="Log activity… (Enter)"
+        onkeydown="if(event.key==='Enter'&&this.value.trim()){patchLead('${l.id}',{},this.value.trim());this.value='';setTimeout(()=>openLead('${l.id}'),250)}">
+      </div>
+      ${(l.activities||[]).map(a=>`<div class="muted mono" style="padding:3px 0">${a.date} — ${esc(a.text)}</div>`).join("")}
+    </div>
+    <div style="margin-top:18px"><button class="ghost" style="color:#b91c1c"
+      onclick="if(confirm('Delete this lead?')){api('/api/leads/${l.id}',{method:'DELETE'}).then(()=>{closeDrawer();loadLeads()})}">Delete lead</button></div>
+  `);
+}
+async function patchLead(id,patch,log){await api("/api/leads/"+id,{method:"PATCH",
+  body:JSON.stringify({patch,log})});loadLeads()}
+
+function fill(body,l){
+  const fn=(l.contact||"").trim().split(/\s+/)[0]||"[name]";
+  return body.replaceAll("{{org}}",l.org||"[org]").replaceAll("{{first_name}}",fn)
+    .replaceAll("{{country}}",l.country||"[country]")
+    .replaceAll("{{trigger}}",l.trigger||"[personal trigger]")
+    .replaceAll("{{sender_name}}",settings.sender_name||"[your name]")}
+function genDraft(id){
+  const l=leads.find(x=>x.id===id)||{};const t=templates.find(x=>x.id===$("d_tpl").value);
+  if(!t)return;let txt=fill(t.body,l);let subject="";
+  const m=txt.match(/^Subject:\s*(.+)\n+/);if(m){subject=m[1];txt=txt.slice(m[0].length)}
+  $("d_subject").value=subject;$("d_body").value=txt;$("draftBox").hidden=false;
+}
+async function sendEmail(id){
+  const to=$("d_email").value.trim();
+  if(!to)return toast("Add the lead's email address first");
+  const btn=$("sendBtn");btn.disabled=true;btn.textContent="Sending…";
+  const r=await api("/api/gmail/send",{method:"POST",body:JSON.stringify({
+    lead_id:id,to,subject:$("d_subject").value,body:$("d_body").value})});
+  btn.disabled=false;btn.textContent="Send from my Gmail";
+  if(r.error)return toast("Gmail: "+r.error);
+  toast("Sent ✓ — follow-up task created");loadLeads();openLead(id);
+}
+
+// ---------- sources ----------
+async function loadSources(){
+  const srcs=await api("/api/sources");
+  $("sourceList").innerHTML=srcs.map(s=>`
+    <div class="card"><div class="row">
+      <div class="grow"><b style="font-size:14px">${esc(s.name)}</b>
+        <p class="muted" style="margin:4px 0 0">${esc(s.description)}</p></div>
+      <button class="btn" onclick="runSource('${s.key}',this)">▶ Pull leads</button>
+    </div><div class="src-status" id="st_${s.key}">${s.needs.length?"Needs: "+s.needs.join(", ")+" (Settings)":""}</div></div>`).join("");
+}
+async function runSource(key,btn){
+  const st=$("st_"+key);btn.disabled=true;st.innerHTML=`<span class="spin">◌</span> pulling…`;
+  const r=await api(`/api/sources/${key}/run`,{method:"POST"});
+  btn.disabled=false;
+  st.textContent=r.error?("✗ "+r.error):
+    `✓ ${r.added} new leads added (fetched ${r.fetched}, ${r.duplicates_skipped} already known)`;
+  if(!r.error){loadLeads();if(r.added)toast(r.added+" new leads scored into pipeline")}
+  return r;
+}
+async function runAll(){
+  const btn=$("runAllBtn");btn.disabled=true;
+  const srcs=await api("/api/sources");let added=0;
+  for(const s of srcs){$("runAllStatus").textContent="Running "+s.name+"…";
+    const r=await runSource(s.key,{disabled:false}).catch(()=>({}));
+    if(r&&r.added)added+=r.added}
+  $("runAllStatus").textContent="Syncing Gmail…";
+  await api("/api/gmail/sync",{method:"POST"}).catch(()=>{});
+  $("runAllStatus").textContent=`Done — ${added} new leads in the pipeline.`;
+  btn.disabled=false;loadLeads();loadTodos();
+}
+
+// ---------- todos ----------
+async function loadTodos(){
+  const todos=await api("/api/todos?all=1");
+  $("todoList").innerHTML=todos.map(t=>{
+    const over=t.due&&t.due<=today()&&!t.done;
+    return `<div class="todo ${t.done?'done':''}">
+      <input type="checkbox" ${t.done?"checked":""} onchange="api('/api/todos/${t.id}',{method:'PATCH',body:JSON.stringify({done:this.checked})}).then(()=>{loadTodos();loadStats()})">
+      <div class="due ${over?'over':''}">${esc(t.due||"—")}</div>
+      <div class="txt grow">${esc(t.text)}${t.lead_org?` <span class="muted">· ${esc(t.lead_org)}</span>`:""}
+        ${t.origin==="gmail"?' <span class="pill" style="background:#ede9fe;color:#5b21b6">from Gmail</span>':""}
+        ${t.origin==="auto"?' <span class="pill" style="background:#e7e7df;color:#555">auto</span>':""}</div>
+    </div>`}).join("")||`<p class="muted">Nothing here. To-dos appear when you add them, when you send outreach (auto follow-up), and when Gmail scanning finds asks like "send a proposal" or "let's schedule a call".</p>`;
+  loadStats();
+}
+async function addTodo(text){await api("/api/todos",{method:"POST",
+  body:JSON.stringify({text,due:$("newTodoDue").value})});loadTodos()}
+async function syncGmail(btn){
+  btn.disabled=true;btn.textContent="Scanning…";
+  const r=await api("/api/gmail/sync",{method:"POST"});
+  btn.disabled=false;btn.textContent="↻ Scan Gmail for tasks";
+  if(r.error)return toast("Gmail: "+r.error);
+  toast(`Scanned ${r.leads_checked} leads — ${r.new_messages} new msgs, ${r.new_todos} to-dos, ${r.stage_bumps} replies detected`);
+  loadTodos();loadLeads();
+}
+
+// ---------- templates ----------
+async function loadTemplates(){
+  templates=await api("/api/templates");
+  $("tplList").innerHTML=templates.map(t=>`
+    <div class="card">
+      <div class="row"><input class="grow" value="${esc(t.name)}" style="font-weight:600;border:none;background:none"
+        onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:this.value,body:$('tb_${t.id}').value})})">
+        <button class="ghost" style="color:#b91c1c" onclick="api('/api/templates/${t.id}',{method:'DELETE'}).then(loadTemplates)">Delete</button></div>
+      <textarea id="tb_${t.id}" rows="9" class="mono" style="margin-top:8px"
+        onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:'${esc(t.name)}',body:this.value})})">${esc(t.body)}</textarea>
+    </div>`).join("");
+}
+async function newTemplate(){await api("/api/templates",{method:"POST",
+  body:JSON.stringify({name:"New template",body:"Subject: \n\nHi {{first_name}},\n\n\n\nBest regards,\n{{sender_name}}"})});
+  loadTemplates()}
+
+// ---------- settings ----------
+const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_locations",
+  "hunter_domains","rss_urls","rss_keywords","reliefweb_query","worldbank_terms"];
+async function loadSettings(){
+  settings=await api("/api/settings");
+  SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});
+  $("senderName").value=settings.sender_name||"";
+  const g=await api("/api/gmail/status");
+  $("gmailConnectBtn").hidden=!g.client_configured||g.authorized;
+  $("gmailStatus").innerHTML=g.client_configured
+    ?(g.authorized?"✅ Gmail connected and authorised.":"🟡 client configured — click Connect Gmail to authorise.")
+    :"⚠️ GOOGLE_CLIENT_ID/SECRET not set yet — follow the setup steps below/README.";
+}
+async function saveSettingForm(){
+  const data={};SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)data[k]=el.value});
+  await saveSettings(data);toast("Settings saved");
+}
+async function saveSettings(data){settings=Object.assign(settings,data);
+  await api("/api/settings",{method:"POST",body:JSON.stringify(data)})}
+
+// ---------- drawer ----------
+function drawer(html){$("drawerHost").innerHTML=
+  `<div class="drawer-bg" onclick="if(event.target===this)closeDrawer()"><div class="drawer">${html}</div></div>`}
+function closeDrawer(){$("drawerHost").innerHTML=""}
+
+// ---------- boot ----------
+chips();loadLeads();loadTemplates();loadSources();loadSettings();loadTodos();
+setInterval(loadStats,60000);
+</script>
+</body>
+</html>
