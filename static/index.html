@@ -81,6 +81,7 @@
   <button data-tab="sources">Sources</button>
   <button data-tab="todos">To-dos <span id="todoBadge"></span></button>
   <button data-tab="templates">Templates</button>
+  <button data-tab="services">Services</button>
   <button data-tab="settings">Settings</button>
 </div></nav>
 
@@ -133,6 +134,25 @@
     </div>
     <div id="tplList"></div>
     <button class="ghost" onclick="newTemplate()">+ New template</button>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="tab-services" hidden>
+    <div class="banner" id="botBanner">Checking bot status…</div>
+    <div class="card">
+      <h2>Add a service</h2>
+      <div class="grid2">
+        <label>Service name<input id="svc_name" placeholder="e.g. M&amp;E &amp; data collection"></label>
+        <label style="grid-column:1/-1">Description (what you offer — the more specific, the better the matching)
+          <textarea id="svc_desc" rows="3" placeholder="Survey design, digital data collection (KoboToolbox/ODK), baseline/endline evaluations for donor-funded programmes…"></textarea></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="saveNewService()">+ Add service</button>
+        <button class="ghost" id="rematchBtn" onclick="rematchAll()">↻ Re-match all leads against services</button>
+      </div>
+      <div class="src-status" id="rematchStatus"></div>
+    </div>
+    <div id="serviceList"></div>
   </section>
 
   <!-- SETTINGS -->
@@ -203,6 +223,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("main>section").forEach(s=>s.hidden=true);
   $("tab-"+b.dataset.tab).hidden=false;
   if(b.dataset.tab==="todos")loadTodos();
+  if(b.dataset.tab==="services")loadServicesTab();
 });
 
 // ---------- stats ----------
@@ -234,6 +255,7 @@ function renderLeads(){
       <div class="grow"><div class="org">${esc(l.org)}</div>
         <div class="sub">${esc(l.contact||"")}${l.role?" · "+esc(l.role):""}${l.country?" · "+esc(l.country):""}
         ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}</div></div>
+      ${l.matched_service?`<span class="pill" style="background:#e3f0ea;color:#0e6e4f" title="${esc(l.match_reasoning||"")}">🤖 ${esc(l.matched_service)} · ${l.match_score}</span>`:""}
       ${over?`<span class="pill" style="background:#fee2e2;color:#991b1b">follow up</span>`:""}
       <div class="val" title="Tentative value">${money(l.tentative_value)}</div>
       ${pill(l.stage)}</div>`}).join("")
@@ -280,6 +302,9 @@ async function openLead(id){
       ${pill(l.stage)}<span class="muted">${esc(l.source||"")}</span>
       ${l.url?`<a href="${esc(l.url)}" target="_blank" style="font-size:12px">source link ↗</a>`:""}
     </div>
+    ${l.matched_service?`<div class="card" style="background:#f7faf8;margin-bottom:10px">
+      <b style="font-size:12.5px">🤖 Matched service: ${esc(l.matched_service)} (${l.match_score})</b>
+      <p class="muted" style="margin:4px 0 0">${esc(l.match_reasoning||"")}</p></div>`:""}
     <div class="grid2">
       <label>Stage<select id="d_stage" onchange="patchLead('${l.id}',{stage:this.value},'Stage → '+this.value)">
         ${STAGES.map(s=>`<option ${s===l.stage?"selected":""}>${s}</option>`).join("")}</select></label>
@@ -432,6 +457,38 @@ async function loadTemplates(){
 async function newTemplate(){await api("/api/templates",{method:"POST",
   body:JSON.stringify({name:"New template",body:"Subject: \n\nHi {{first_name}},\n\n\n\nBest regards,\n{{sender_name}}"})});
   loadTemplates()}
+
+// ---------- services / bot ----------
+async function loadServicesTab(){
+  const b=await api("/api/bot/status");
+  $("botBanner").textContent=b.configured
+    ?"🤖 Gemini bot is configured — new leads are automatically matched to your services below."
+    :"⚠️ Bot not configured yet — set GEMINI_API_KEY (free, from Google AI Studio) as an environment variable to enable automatic matching. You can still define services now; matching starts once it's configured.";
+  await loadServices();
+}
+async function loadServices(){
+  const svcs=await api("/api/services");
+  $("serviceList").innerHTML=svcs.map(s=>`
+    <div class="card">
+      <div class="row"><input class="grow" value="${esc(s.name)}" style="font-weight:600;border:none;background:none"
+        onchange="api('/api/services',{method:'POST',body:JSON.stringify({id:'${s.id}',name:this.value,description:$('sd_${s.id}').value})})">
+        <button class="ghost" style="color:#b91c1c" onclick="if(confirm('Delete this service?')){api('/api/services/${s.id}',{method:'DELETE'}).then(loadServices)}">Delete</button></div>
+      <textarea id="sd_${s.id}" rows="3" style="margin-top:8px"
+        onchange="api('/api/services',{method:'POST',body:JSON.stringify({id:'${s.id}',name:'${esc(s.name)}',description:this.value})})">${esc(s.description)}</textarea>
+    </div>`).join("")||`<div class="empty">No services defined yet. Add one above — the bot uses it to score incoming leads.</div>`;
+}
+async function saveNewService(){
+  const name=$("svc_name").value.trim();if(!name)return toast("Service name is required");
+  await api("/api/services",{method:"POST",body:JSON.stringify({name,description:$("svc_desc").value})});
+  $("svc_name").value="";$("svc_desc").value="";toast("Service added");loadServices();
+}
+async function rematchAll(){
+  const btn=$("rematchBtn");btn.disabled=true;$("rematchStatus").innerHTML=`<span class="spin">◌</span> matching…`;
+  const r=await api("/api/services/rematch",{method:"POST"});
+  btn.disabled=false;
+  $("rematchStatus").textContent=r.error?("✗ "+r.error):`✓ Matched ${r.matched} of ${r.total} leads`;
+  if(!r.error)loadLeads();
+}
 
 // ---------- settings ----------
 const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_locations",

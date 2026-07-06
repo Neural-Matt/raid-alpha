@@ -15,10 +15,14 @@ What it does:
    - Hunter.io Domain Search (published emails at target companies, your API key)
 2. **Auto-enrich & score** every lead: service segment, 0–100 fit score, and a
    tentative deal value — all pre-populated in the pipeline and fully editable.
-3. **Gmail bridge**: draft from templates, send from your own Gmail, and scan
+3. **Intelligent service matching (free, optional)**: define the services your
+   business offers in plain language, and a Gemini-powered bot scores every
+   incoming lead against them with a fit score and short reasoning — no
+   paid API required.
+4. **Gmail bridge**: draft from templates, send from your own Gmail, and scan
    your inbox — replies auto-bump lead stages and asks like "send a proposal"
    or "let's schedule a call" become to-dos automatically.
-4. **Full tracking**: pipeline stages, follow-up dates, activity logs, to-dos,
+5. **Full tracking**: pipeline stages, follow-up dates, activity logs, to-dos,
    templates, search/filter, and dashboard stats including total pipeline value.
 
 ---
@@ -135,6 +139,31 @@ Gmail conversations with them, attaches the thread to the lead card, marks
 leads as **Replied** when they've written back, and creates to-dos when a reply
 asks for a demo, call, proposal, or capability statement.
 
+## 3b. Intelligent service matching (free bot, ~2 minutes)
+
+Instead of a fixed keyword classifier, you can define the actual services
+your business offers in plain language, and a small bot decides which one
+each incoming lead best matches, with a fit score and a one-sentence reason.
+It runs on **Google Gemini's free tier** — no credit card, no cost.
+
+1. Go to https://aistudio.google.com/apikey → **Create API key** (any Google
+   account works, no billing setup needed for the free tier).
+2. Set it as an environment variable wherever the app runs:
+   - `GEMINI_API_KEY` — locally in your shell, or in Vercel → Settings →
+     Environment Variables (both Production and Preview).
+3. Go to **Services** in the CRM and add one or more services — a name plus a
+   description of what you offer. The more specific the description, the
+   better the matching (e.g. *"Survey design, digital data collection
+   (KoboToolbox/ODK), baseline/endline evaluations for donor-funded
+   programmes"* rather than just *"M&E"*).
+
+From then on, every new lead pulled from a source is automatically matched
+against your services (one batched API call per pull — cheap and fast). Click
+**↻ Re-match all leads against services** any time you add or edit a service
+to re-score your existing pipeline. If `GEMINI_API_KEY` isn't set, or no
+services are defined, this step is silently skipped — the CRM works fine
+without it, falling back to the static keyword scoring described above.
+
 ## 4. Daily workflow
 
 1. **Sources → Run all** (pull + Gmail sync in one click).
@@ -163,6 +192,7 @@ asks for a demo, call, proposal, or capability statement.
 app.py            FastAPI server (run this)
 db.py             Postgres storage (creates tables on first run)
 enrich.py         Segment classification, fit scoring, tentative deal values
+bot.py            Gemini-powered service matching (free tier, optional)
 gmail_bridge.py   Gmail web OAuth flow, send, inbox scan → stages & to-dos
 sources/          One module per lead source (add your own — see __init__.py)
 static/index.html The CRM interface

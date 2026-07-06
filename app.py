@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+import bot
 import db
 import enrich
 import gmail_bridge
@@ -44,6 +45,22 @@ async def api_add_lead(req: Request):
     # manual adds should never be silently dropped as dupes
     lead["dedupe_key"] = f"manual|{db.uid()}"
     lid = db.insert_lead(lead, "Lead added manually")
+
+    if bot.configured() and lid:
+        services = db.list_services()
+        if services:
+            try:
+                matches = bot.match_leads([db.get_lead(lid)], services)
+            except Exception:
+                matches = {}
+            m = matches.get(0)
+            if m:
+                db.update_lead(lid, {
+                    "matched_service": m["service_name"],
+                    "match_score": m["score"],
+                    "match_reasoning": m["reasoning"],
+                })
+
     return {"id": lid}
 
 
@@ -79,13 +96,86 @@ def api_run_source(key: str):
         return JSONResponse({"error": str(e)}, status_code=400)
 
     added, skipped = 0, 0
+    new_lead_ids = []
     for raw in raw_leads:
         lead = enrich.score_lead(raw)
-        if db.insert_lead(lead, f"Pulled from {lead.get('source', key)}"):
+        lid = db.insert_lead(lead, f"Pulled from {lead.get('source', key)}")
+        if lid:
             added += 1
+            new_lead_ids.append(lid)
         else:
             skipped += 1
+
+    if bot.configured() and new_lead_ids:
+        services = db.list_services()
+        new_leads = [db.get_lead(lid) for lid in new_lead_ids]
+        try:
+            matches = bot.match_leads(new_leads, services)
+        except Exception:
+            matches = {}
+        for i, lid in enumerate(new_lead_ids):
+            m = matches.get(i)
+            if m:
+                db.update_lead(lid, {
+                    "matched_service": m["service_name"],
+                    "match_score": m["score"],
+                    "match_reasoning": m["reasoning"],
+                })
+
     return {"added": added, "duplicates_skipped": skipped, "fetched": len(raw_leads)}
+
+
+# ---------------- services ----------------
+
+@app.get("/api/services")
+def api_services():
+    return db.list_services()
+
+
+@app.post("/api/services")
+async def api_save_service(req: Request):
+    s = await req.json()
+    sid = db.save_service(s.get("id"), s.get("name", "Service"), s.get("description", ""))
+    return {"id": sid}
+
+
+@app.delete("/api/services/{sid}")
+def api_delete_service(sid: str):
+    db.delete_service(sid)
+    return {"ok": True}
+
+
+@app.get("/api/bot/status")
+def api_bot_status():
+    return {"configured": bot.configured()}
+
+
+@app.post("/api/services/rematch")
+def api_rematch():
+    if not bot.configured():
+        return JSONResponse({"error": "GEMINI_API_KEY not set"}, status_code=400)
+    services = db.list_services()
+    if not services:
+        return JSONResponse({"error": "No services defined yet"}, status_code=400)
+    leads = db.list_leads()
+    matched = 0
+    batch_size = 40
+    for start in range(0, len(leads), batch_size):
+        batch = leads[start:start + batch_size]
+        try:
+            matches = bot.match_leads(batch, services)
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+        for i, lead in enumerate(batch):
+            m = matches.get(i)
+            if m:
+                db.update_lead(lead["id"], {
+                    "matched_service": m["service_name"],
+                    "match_score": m["score"],
+                    "match_reasoning": m["reasoning"],
+                })
+                matched += 1
+    return {"matched": matched, "total": len(leads)}
 
 
 # ---------------- templates ----------------

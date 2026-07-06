@@ -29,8 +29,17 @@ CREATE TABLE IF NOT EXISTS leads (
     url TEXT DEFAULT '',
     follow_up TEXT DEFAULT '',
     dedupe_key TEXT UNIQUE,
+    matched_service TEXT DEFAULT '',
+    match_score INTEGER DEFAULT 0,
+    match_reasoning TEXT DEFAULT '',
     created_at TEXT,
     updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS services (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    created_at TEXT
 );
 CREATE TABLE IF NOT EXISTS activities (
     id TEXT PRIMARY KEY,
@@ -133,6 +142,10 @@ def init() -> None:
     con = connect()
     cur = con.cursor()
     cur.execute(SCHEMA)
+    # migrations for columns added after the table already existed in production
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS matched_service TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS match_score INTEGER DEFAULT 0")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS match_reasoning TEXT DEFAULT ''")
     cur.execute("SELECT COUNT(*) AS c FROM templates")
     if cur.fetchone()["c"] == 0:
         for name, body in DEFAULT_TEMPLATES:
@@ -176,7 +189,8 @@ def get_lead(lead_id):
 
 
 LEAD_FIELDS = ["org", "contact", "role", "email", "country", "segment", "source",
-               "stage", "score", "tentative_value", "trigger", "notes", "url", "follow_up"]
+               "stage", "score", "tentative_value", "trigger", "notes", "url", "follow_up",
+               "matched_service", "match_score", "match_reasoning"]
 
 
 def insert_lead(data: dict, log: str = "Lead created"):
@@ -188,6 +202,7 @@ def insert_lead(data: dict, log: str = "Lead created"):
     values = {f: data.get(f, "") for f in LEAD_FIELDS}
     values["score"] = int(data.get("score") or 0)
     values["tentative_value"] = int(data.get("tentative_value") or 0)
+    values["match_score"] = int(data.get("match_score") or 0)
     values["stage"] = data.get("stage") or "New"
     try:
         cur.execute(
@@ -245,6 +260,42 @@ def find_lead_by_email(email: str):
     cur.close()
     con.close()
     return dict(row) if row else None
+
+
+# ---------------- services ----------------
+
+def list_services():
+    con = connect()
+    cur = con.cursor()
+    cur.execute("SELECT * FROM services ORDER BY created_at")
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    con.close()
+    return rows
+
+
+def save_service(sid, name, description):
+    con = connect()
+    cur = con.cursor()
+    if sid:
+        cur.execute("UPDATE services SET name=%s, description=%s WHERE id=%s", (name, description, sid))
+    else:
+        sid = uid()
+        cur.execute("INSERT INTO services (id, name, description, created_at) VALUES (%s,%s,%s,%s)",
+                    (sid, name, description, now()))
+    con.commit()
+    cur.close()
+    con.close()
+    return sid
+
+
+def delete_service(sid):
+    con = connect()
+    cur = con.cursor()
+    cur.execute("DELETE FROM services WHERE id=%s", (sid,))
+    con.commit()
+    cur.close()
+    con.close()
 
 
 # ---------------- templates ----------------
