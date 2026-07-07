@@ -41,6 +41,7 @@ def pull(settings: dict) -> list[dict]:
                 "contact": name,
                 "role": e.get("position", "") or "",
                 "email": e.get("value", ""),
+                "phone": e.get("phone_number") or "",
                 "country": country,
                 "notes": f"Hunter domain search ({domain}). Confidence: {e.get('confidence','?')}%",
                 "url": f"https://{domain}",

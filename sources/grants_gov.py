@@ -86,6 +86,7 @@ def pull(settings: dict) -> list[dict]:
             "org": agency[:160],
             "contact": detail.get("agencyContactName", "").replace("\n", " ").strip(),
             "email": detail.get("agencyContactEmail", ""),
+            "phone": detail.get("agencyContactPhone", ""),
             "role": "Grants contact",
             "country": "",
             "trigger": f"their open funding opportunity: \"{title}\"" +

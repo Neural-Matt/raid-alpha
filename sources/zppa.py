@@ -98,6 +98,7 @@ def pull(settings: dict) -> list[dict]:
                     leads.append({
                         "org": org,
                         "email": contact.get("email", ""),
+                        "phone": contact.get("telephone", ""),
                         "role": "Procurement contact" if contact.get("email") else "",
                         "country": address.get("countryName") or "Zambia",
                         "trigger": f"their open tender: \"{title}\"",

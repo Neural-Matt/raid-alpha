@@ -67,6 +67,7 @@ def pull(settings: dict) -> list[dict]:
                 "org": org[:160],
                 "contact": n.get("contact_name", ""),
                 "email": n.get("contact_email", ""),
+                "phone": n.get("contact_phone_no", ""),
                 "role": "Procurement contact",
                 "country": country,
                 "trigger": f"their open tender: \"{n.get('bid_description','')[:120]}\"",

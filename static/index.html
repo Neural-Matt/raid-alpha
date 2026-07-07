@@ -294,6 +294,10 @@ function scoreCls(s){return s>=65?"s-hi":s>=40?"s-md":"s-lo"}
 function initials(org){const w=(org||"?").trim().split(/\s+/).filter(Boolean);
   return ((w[0]||"?")[0]+(w[1]?w[1][0]:"")).toUpperCase()}
 function avatar(org){return `<div class="avatar">${esc(initials(org))}</div>`}
+function waLink(phone){
+  const digits=(phone||"").replace(/[^0-9]/g,"");
+  return digits.length>=8?`https://wa.me/${digits}`:"";
+}
 function daysUntil(dateStr){if(!dateStr)return null;
   const d=new Date(dateStr+"T00:00:00");if(isNaN(d))return null;
   return Math.ceil((d-new Date(today()+"T00:00:00"))/86400000)}
@@ -393,7 +397,8 @@ function renderLeads(){
       ${avatar(l.org)}
       <div class="grow"><div class="org">${esc(l.org)}</div>
         <div class="sub">${esc(l.contact||"")}${l.role?" · "+esc(l.role):""}${l.country?" · "+esc(l.country):""}
-        ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}</div></div>
+        ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}
+        ${l.email?" · ✉":""}${waLink(l.phone)?" · 💬":""}</div></div>
       ${l.matched_service?`<span class="pill" style="background:var(--accsoft);color:var(--acc-ink)" title="${esc(l.match_reasoning||"")}">🤖 ${esc(l.matched_service)} · ${l.match_score}</span>`:""}
       ${deadlineBadge(l)}
       ${over?`<span class="pill" style="background:var(--criticalsoft);color:var(--critical)">follow up</span>`:""}
@@ -410,6 +415,7 @@ function openAdd(){
       <label>Contact<input id="f_contact"></label>
       <label>Role<input id="f_role"></label>
       <label>Email<input id="f_email"></label>
+      <label>Phone (WhatsApp-capable if possible)<input id="f_phone" placeholder="+260 9…"></label>
       <label>Country<input id="f_country"></label>
       <label>Segment<select id="f_segment">${SEGMENTS.map(s=>`<option>${s}</option>`).join("")}</select></label>
       <label style="grid-column:1/-1">Trigger (why now?)<input id="f_trigger" placeholder="tender, new grant, job posting…"></label>
@@ -424,7 +430,7 @@ async function saveNewLead(){
   const org=$("f_org").value.trim();if(!org)return toast("Organisation is required");
   await api("/api/leads",{method:"POST",body:JSON.stringify({org,
     contact:$("f_contact").value,role:$("f_role").value,email:$("f_email").value,
-    country:$("f_country").value,segment:$("f_segment").value,
+    phone:$("f_phone").value,country:$("f_country").value,segment:$("f_segment").value,
     trigger:$("f_trigger").value,notes:$("f_notes").value})});
   closeDrawer();toast("Lead added & scored");loadLeads();
 }
@@ -481,6 +487,13 @@ async function openLead(id){
           <div class="row" style="gap:6px">
             <input id="d_email" class="grow" value="${esc(l.email)}" onchange="patchLead('${l.id}',{email:this.value})">
             ${l.email?`<a class="ghost" style="text-decoration:none;padding:8px 12px;border-radius:9px;font-size:12.5px" href="mailto:${esc(l.email)}">✉ mailto</a>`:""}
+          </div>
+        </label>
+        <label style="grid-column:1/-1">Phone
+          <div class="row" style="gap:6px">
+            <input id="d_phone" class="grow" value="${esc(l.phone||"")}" placeholder="+260 9…"
+              onchange="patchLead('${l.id}',{phone:this.value})">
+            ${waLink(l.phone)?`<a class="ghost" style="text-decoration:none;padding:8px 12px;border-radius:9px;font-size:12.5px" href="${waLink(l.phone)}" target="_blank">💬 WhatsApp</a>`:""}
           </div>
         </label>
       </div>

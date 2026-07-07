@@ -46,11 +46,14 @@ def pull(settings: dict) -> list[dict]:
         if not org:
             continue
         name = p.get("name", "")
+        phones = p.get("phone_numbers") or []
+        phone = phones[0].get("raw_number", "") if phones and isinstance(phones[0], dict) else ""
         leads.append({
             "org": org,
             "contact": name,
             "role": p.get("title", ""),
             "email": p.get("email", "") if p.get("email") and "not_unlocked" not in str(p.get("email")) else "",
+            "phone": phone,
             "country": p.get("country", "") or "",
             "trigger": "",
             "notes": f"Apollo match. LinkedIn: {p.get('linkedin_url','')}",

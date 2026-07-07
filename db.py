@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS leads (
     contact TEXT DEFAULT '',
     role TEXT DEFAULT '',
     email TEXT DEFAULT '',
+    phone TEXT DEFAULT '',
     country TEXT DEFAULT '',
     segment TEXT DEFAULT '',
     source TEXT DEFAULT '',
@@ -154,6 +155,7 @@ def init() -> None:
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS value_note TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS deadline TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS how_to_apply TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''")
     cur.execute("SELECT COUNT(*) AS c FROM templates")
     if cur.fetchone()["c"] == 0:
         for name, body in DEFAULT_TEMPLATES:
@@ -196,7 +198,7 @@ def get_lead(lead_id):
     return lead
 
 
-LEAD_FIELDS = ["org", "contact", "role", "email", "country", "segment", "source",
+LEAD_FIELDS = ["org", "contact", "role", "email", "phone", "country", "segment", "source",
                "stage", "score", "tentative_value", "trigger", "notes", "url", "follow_up",
                "matched_service", "match_score", "match_reasoning",
                "score_breakdown", "value_note", "deadline", "how_to_apply"]
