@@ -6,10 +6,12 @@ Each source module exposes:
     NEEDS       - list of setting keys it requires (empty if none)
     pull(settings: dict) -> list[dict]   raw leads
 
-A raw lead dict can contain: org, contact, role, email, country, trigger,
-notes, url, source, posted_date, segment, dedupe_key, deadline, how_to_apply.
+A raw lead dict can contain: org, contact, role, email, phone, country,
+trigger, notes, url, source, posted_date, segment, dedupe_key, deadline,
+how_to_apply.
 """
-from . import reliefweb, worldbank, wb_tenders, rss_feeds, apollo, hunter, zppa, grants_gov
+from . import (reliefweb, worldbank, wb_tenders, rss_feeds, apollo, hunter,
+               zppa, grants_gov, ted_eu, sam_gov)
 
 REGISTRY = {
     "reliefweb": reliefweb,
@@ -17,6 +19,8 @@ REGISTRY = {
     "wb_tenders": wb_tenders,
     "zppa": zppa,
     "grants_gov": grants_gov,
+    "ted_eu": ted_eu,
+    "sam_gov": sam_gov,
     "rss": rss_feeds,
     "apollo": apollo,
     "hunter": hunter,

@@ -168,10 +168,10 @@
   <!-- SOURCES -->
   <section id="tab-sources" hidden>
     <div class="banner">These pullers use official public APIs and licensed providers only —
-      ReliefWeb, World Bank (projects and open tenders), ZPPA and Grants.gov, plus Apollo/Hunter
-      with your own keys, plus any RSS/Google-Alerts feeds you add. New finds are auto-scored,
-      valued and de-duplicated into the pipeline, with deadline and contact details pulled in
-      wherever the source provides them.</div>
+      ReliefWeb, World Bank (projects and open tenders), ZPPA, Grants.gov, TED (EU) and SAM.gov
+      (US), plus Apollo/Hunter with your own keys, plus any RSS/Google-Alerts feeds you add.
+      New finds are auto-scored, valued and de-duplicated into the pipeline, with deadline,
+      contact and application-procedure details pulled in wherever the source provides them.</div>
     <div id="sourceList"></div>
     <div class="card"><b style="font-size:14px">Run everything</b>
       <p class="muted" style="margin:6px 0 10px">Runs all configured sources back-to-back, then a Gmail sync.</p>
@@ -263,6 +263,11 @@
           <select id="set_wb_tender_countries_only"><option value="true">Yes</option><option value="false">No — show all countries</option></select></label>
         <label style="grid-column:1/-1">Grants.gov search keywords
           <input id="set_grants_gov_query" placeholder="monitoring and evaluation data collection capacity building"></label>
+        <label>TED (EU) search keywords<input id="set_ted_query" placeholder="monitoring and evaluation"></label>
+        <label>TED days back<input id="set_ted_days_back" placeholder="60"></label>
+        <label>SAM.gov API key<input id="set_sam_gov_api_key" type="password"></label>
+        <label>SAM.gov search keywords<input id="set_sam_gov_query" placeholder="monitoring and evaluation"></label>
+        <label>SAM.gov days back<input id="set_sam_gov_days_back" placeholder="30"></label>
       </div>
       <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
     </div>
@@ -683,7 +688,8 @@ async function rematchAll(){
 // ---------- settings ----------
 const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_locations",
   "hunter_domains","rss_urls","rss_keywords","reliefweb_appname","reliefweb_query","worldbank_terms",
-  "zppa_query","zppa_months_back","wb_tender_terms","wb_tender_countries_only","grants_gov_query"];
+  "zppa_query","zppa_months_back","wb_tender_terms","wb_tender_countries_only","grants_gov_query",
+  "ted_query","ted_days_back","sam_gov_api_key","sam_gov_query","sam_gov_days_back"];
 async function loadSettings(){
   settings=await api("/api/settings");
   SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});

@@ -17,6 +17,11 @@ What it does:
    - Grants.gov (US federal funding opportunities — many open to international
      applicants — enriched with the actual grants contact, deadline, funding
      ceiling and eligibility text)
+   - TED — Tenders Electronic Daily (official EU public procurement — live
+     tenders from European Commission DGs, national ministries and
+     development agencies like GIZ, with real deadlines)
+   - SAM.gov (US federal contract solicitations, incl. USAID/State Dept
+     procurements — requires your own free SAM.gov API key)
    - Any RSS/Atom feeds you add (tender boards, Google Alerts = the widest net)
    - Apollo.io People Search (decision-maker contacts, your API key)
    - Hunter.io Domain Search (published emails at target companies, your API key)
@@ -145,6 +150,15 @@ To widen the net:
   international/non-US applicants (check each listing's eligibility text,
   captured under "How to apply" on the lead). Adjust **Grants.gov search
   keywords** in Settings.
+- **TED (EU)**: no key needed. Searches EU procurement notice *descriptions*
+  (not just titles, since titles are mostly generic category names) —
+  adjust **TED (EU) search keywords** and **TED days back** in Settings.
+- **SAM.gov**: needs your own free API key. Log into sam.gov (create an
+  account if needed) → Account Details → request a public API key → paste
+  it into **Settings → SAM.gov API key**. Note: this module is built to
+  SAM.gov's documented API shape but hasn't been live-verified end-to-end
+  (only the account holder can get a key to test with) — if a pull errors,
+  the response shape may have drifted; tell your assistant and it can fix it.
 
 ## 3. Gmail bridge setup (one-time, ~5 minutes)
 

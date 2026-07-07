@@ -60,6 +60,8 @@ SOURCE_WEIGHT = {
     "World Bank Tenders": 32,  # open tender w/ deadline + named contact = strongest signal
     "ZPPA": 28,            # open government tender = active, budgeted demand
     "Grants.gov": 26,      # open US federal funding opportunity w/ deadline
+    "TED (EU)": 30,        # open EU public tender w/ deadline, often named contact
+    "SAM.gov": 26,         # open US federal contract solicitation w/ deadline
     "RSS feed": 20,
     "Apollo": 15,          # contact data, no explicit demand signal
     "Hunter": 12,
