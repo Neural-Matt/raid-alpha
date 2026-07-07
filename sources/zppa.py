@@ -87,11 +87,23 @@ def pull(settings: dict) -> list[dict]:
                     if not org:
                         continue
                     address = entity.get("address") or {}
+                    contact = entity.get("contactPoint") or {}
+                    deadline = (tender.get("tenderPeriod") or {}).get("endDate", "")[:10]
+                    submission = tender.get("submissionMethodDetails", "")
+                    eligibility = (tender.get("eligibilityCriteria") or "")[:800]
+                    how_to_apply = "\n".join(filter(None, [
+                        f"Submission method: {submission}" if submission else "",
+                        f"Eligibility / requirements: {eligibility}" if eligibility else "",
+                    ]))
                     leads.append({
                         "org": org,
+                        "email": contact.get("email", ""),
+                        "role": "Procurement contact" if contact.get("email") else "",
                         "country": address.get("countryName") or "Zambia",
                         "trigger": f"their open tender: \"{title}\"",
                         "notes": f"ZPPA tender: {title}. {desc}"[:400],
+                        "how_to_apply": how_to_apply[:2000],
+                        "deadline": deadline,
                         "url": "https://www.zppa.org.zm/records",
                         "source": "ZPPA",
                         "posted_date": (release.get("date") or "")[:10],

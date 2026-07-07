@@ -25,7 +25,8 @@ def pull(settings: dict) -> list[dict]:
         "limit": 30,
         "sort[]": "date:desc",
         "fields[include][]": ["title", "source.name", "country.name",
-                              "date.created", "url", "career_categories.name"],
+                              "date.created", "date.closing", "url",
+                              "career_categories.name", "body", "how_to_apply"],
     }
     resp = requests.get(API, params=params, timeout=30)
     resp.raise_for_status()
@@ -44,13 +45,16 @@ def pull(settings: dict) -> list[dict]:
         country = countries[0].get("name", "") if countries else ""
         title = f.get("title", "")
         posted = (f.get("date", {}) or {}).get("created", "")[:10]
+        deadline = (f.get("date", {}) or {}).get("closing", "")[:10]
         if not org:
             continue
         leads.append({
             "org": org,
             "country": country,
             "trigger": f"your recent posting: \"{title}\"",
-            "notes": f"ReliefWeb posting: {title}",
+            "notes": (f.get("body") or f"ReliefWeb posting: {title}")[:1000],
+            "how_to_apply": (f.get("how_to_apply") or "")[:2000],
+            "deadline": deadline,
             "url": f.get("url", ""),
             "source": "ReliefWeb",
             "posted_date": posted,

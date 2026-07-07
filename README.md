@@ -7,14 +7,23 @@ locally against any Postgres database (including your Supabase project).
 What it does:
 
 1. **Pull leads** at the press of a button from legal, official sources:
-   - ReliefWeb API (live M&E / data-collection consultancy postings)
+   - ReliefWeb API (live M&E / data-collection consultancy postings — includes
+     application deadline and how-to-apply text where the posting has it)
    - World Bank Projects API (active funded projects in your region)
-   - ZPPA OCDS bulk data (open Zambian government tenders, filtered to your keywords)
+   - World Bank Procurement Notices API (live open tenders — real deadlines and
+     named procurement contacts with email/phone, straight from the notice)
+   - ZPPA OCDS bulk data (open Zambian government tenders, filtered to your
+     keywords, with deadline + submission method where published)
+   - Grants.gov (US federal funding opportunities — many open to international
+     applicants — enriched with the actual grants contact, deadline, funding
+     ceiling and eligibility text)
    - Any RSS/Atom feeds you add (tender boards, Google Alerts = the widest net)
    - Apollo.io People Search (decision-maker contacts, your API key)
    - Hunter.io Domain Search (published emails at target companies, your API key)
-2. **Auto-enrich & score** every lead: service segment, 0–100 fit score, and a
-   tentative deal value — all pre-populated in the pipeline and fully editable.
+2. **Auto-enrich & score** every lead: service segment, 0–100 fit score, a
+   tentative deal value, application deadline and how-to-apply instructions
+   where the source provides them — all pre-populated in the pipeline and
+   fully editable.
 3. **Intelligent service matching (free, optional)**: define the services your
    business offers in plain language, and a Gemini-powered bot scores every
    incoming lead against them with a fit score and short reasoning — no
@@ -106,8 +115,9 @@ already within that limit.
 
 ## 2. First pull
 
-Go to **Sources → Run all sources**. ReliefWeb, World Bank, and ZPPA need no
-keys, so you'll have a scored pipeline within a minute.
+Go to **Sources → Run all sources**. ReliefWeb, World Bank (both projects and
+tenders), ZPPA, and Grants.gov need no keys, so you'll have a scored pipeline
+within a minute.
 
 To widen the net:
 
@@ -126,6 +136,15 @@ To widen the net:
   data and keeps only tenders matching **Settings → ZPPA keyword filter**
   (defaults to M&E/data/IT terms — broaden it if you want wider coverage;
   ZPPA covers every sector, so an empty filter would flood your pipeline).
+- **World Bank open tenders**: live procurement notices with real deadlines
+  and named contacts. Defaults to your priority African countries — flip
+  **Settings → Limit WB tenders to your priority countries?** to "No" for
+  worldwide coverage, and adjust **World Bank tender search terms** to widen
+  or narrow the keyword match.
+- **Grants.gov**: US federal funding opportunities, many explicitly open to
+  international/non-US applicants (check each listing's eligibility text,
+  captured under "How to apply" on the lead). Adjust **Grants.gov search
+  keywords** in Settings.
 
 ## 3. Gmail bridge setup (one-time, ~5 minutes)
 

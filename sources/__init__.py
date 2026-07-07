@@ -7,14 +7,16 @@ Each source module exposes:
     pull(settings: dict) -> list[dict]   raw leads
 
 A raw lead dict can contain: org, contact, role, email, country, trigger,
-notes, url, source, posted_date, segment, dedupe_key.
+notes, url, source, posted_date, segment, dedupe_key, deadline, how_to_apply.
 """
-from . import reliefweb, worldbank, rss_feeds, apollo, hunter, zppa
+from . import reliefweb, worldbank, wb_tenders, rss_feeds, apollo, hunter, zppa, grants_gov
 
 REGISTRY = {
     "reliefweb": reliefweb,
     "worldbank": worldbank,
+    "wb_tenders": wb_tenders,
     "zppa": zppa,
+    "grants_gov": grants_gov,
     "rss": rss_feeds,
     "apollo": apollo,
     "hunter": hunter,

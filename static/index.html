@@ -168,9 +168,10 @@
   <!-- SOURCES -->
   <section id="tab-sources" hidden>
     <div class="banner">These pullers use official public APIs and licensed providers only —
-      ReliefWeb and World Bank open APIs, plus Apollo/Hunter with your own keys, plus any
-      RSS/Google-Alerts feeds you add. New finds are auto-scored, valued and de-duplicated
-      into the pipeline.</div>
+      ReliefWeb, World Bank (projects and open tenders), ZPPA and Grants.gov, plus Apollo/Hunter
+      with your own keys, plus any RSS/Google-Alerts feeds you add. New finds are auto-scored,
+      valued and de-duplicated into the pipeline, with deadline and contact details pulled in
+      wherever the source provides them.</div>
     <div id="sourceList"></div>
     <div class="card"><b style="font-size:14px">Run everything</b>
       <p class="muted" style="margin:6px 0 10px">Runs all configured sources back-to-back, then a Gmail sync.</p>
@@ -256,6 +257,12 @@
         <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated)
           <input id="set_zppa_query" placeholder="monitoring and evaluation, data collection, dashboard…"></label>
         <label>ZPPA months back<input id="set_zppa_months_back" placeholder="1"></label>
+        <label style="grid-column:1/-1">World Bank tender search terms (comma-separated)
+          <input id="set_wb_tender_terms" placeholder="monitoring and evaluation, data collection, survey…"></label>
+        <label>Limit WB tenders to your priority countries?
+          <select id="set_wb_tender_countries_only"><option value="true">Yes</option><option value="false">No — show all countries</option></select></label>
+        <label style="grid-column:1/-1">Grants.gov search keywords
+          <input id="set_grants_gov_query" placeholder="monitoring and evaluation data collection capacity building"></label>
       </div>
       <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
     </div>
@@ -287,6 +294,19 @@ function scoreCls(s){return s>=65?"s-hi":s>=40?"s-md":"s-lo"}
 function initials(org){const w=(org||"?").trim().split(/\s+/).filter(Boolean);
   return ((w[0]||"?")[0]+(w[1]?w[1][0]:"")).toUpperCase()}
 function avatar(org){return `<div class="avatar">${esc(initials(org))}</div>`}
+function daysUntil(dateStr){if(!dateStr)return null;
+  const d=new Date(dateStr+"T00:00:00");if(isNaN(d))return null;
+  return Math.ceil((d-new Date(today()+"T00:00:00"))/86400000)}
+function deadlineBadge(l){
+  if(!l.deadline)return "";
+  const days=daysUntil(l.deadline);
+  if(days===null)return "";
+  let label,bg,fg;
+  if(days<0){label="deadline passed";bg="#eef0f6";fg="var(--mut-soft)"}
+  else if(days<=7){label=days===0?"due today":`${days}d to apply`;bg="var(--gold)";fg="var(--gold-ink)"}
+  else{label=`${days}d to apply`;bg="var(--peri-soft)";fg="var(--peri-ink)"}
+  return `<span class="pill" style="background:${bg};color:${fg}" title="Application deadline: ${esc(l.deadline)}">⏱ ${label}</span>`;
+}
 
 // ---------- tabs ----------
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -375,6 +395,7 @@ function renderLeads(){
         <div class="sub">${esc(l.contact||"")}${l.role?" · "+esc(l.role):""}${l.country?" · "+esc(l.country):""}
         ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}</div></div>
       ${l.matched_service?`<span class="pill" style="background:var(--accsoft);color:var(--acc-ink)" title="${esc(l.match_reasoning||"")}">🤖 ${esc(l.matched_service)} · ${l.match_score}</span>`:""}
+      ${deadlineBadge(l)}
       ${over?`<span class="pill" style="background:var(--criticalsoft);color:var(--critical)">follow up</span>`:""}
       <div class="val" title="${esc(l.value_note||'Tentative value')}">${money(l.tentative_value)}</div>
       ${pill(l.stage)}</div>`}).join("")
@@ -436,15 +457,40 @@ async function openLead(id){
     ${l.matched_service?`<div class="card" style="background:var(--accsoft);margin-bottom:10px;margin-top:10px">
       <b style="font-size:12.5px">🤖 Matched service: ${esc(l.matched_service)} (${l.match_score})</b>
       <p class="muted" style="margin:4px 0 0">${esc(l.match_reasoning||"")}</p></div>`:""}
+
+    <div class="card" style="margin-bottom:10px">
+      <b style="font-size:13px">📋 Opportunity details</b>
+      <div class="grid2" style="margin-top:8px">
+        <label>Application deadline ${deadlineBadge(l)}
+          <input type="date" id="d_deadline" value="${esc(l.deadline||"")}"
+            onchange="patchLead('${l.id}',{deadline:this.value},'Deadline set: '+this.value)"></label>
+        <label>Country<input value="${esc(l.country)}" onchange="patchLead('${l.id}',{country:this.value})"></label>
+      </div>
+      ${l.how_to_apply?`<details class="why" style="margin-top:10px" open>
+        <summary>How to apply / eligibility</summary>
+        <div class="breakdown" style="margin-top:6px;max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:var(--sans)">${esc(l.how_to_apply)}</div>
+      </details>`:`<p class="muted" style="margin-top:8px">No application procedure captured for this lead yet — check the source link, or add notes manually below.</p>`}
+    </div>
+
+    <div class="card" style="margin-bottom:10px">
+      <b style="font-size:13px">👤 Contact</b>
+      <div class="grid2" style="margin-top:8px">
+        <label>Contact name<input value="${esc(l.contact)}" onchange="patchLead('${l.id}',{contact:this.value})"></label>
+        <label>Role<input value="${esc(l.role)}" onchange="patchLead('${l.id}',{role:this.value})"></label>
+        <label style="grid-column:1/-1">Email
+          <div class="row" style="gap:6px">
+            <input id="d_email" class="grow" value="${esc(l.email)}" onchange="patchLead('${l.id}',{email:this.value})">
+            ${l.email?`<a class="ghost" style="text-decoration:none;padding:8px 12px;border-radius:9px;font-size:12.5px" href="mailto:${esc(l.email)}">✉ mailto</a>`:""}
+          </div>
+        </label>
+      </div>
+    </div>
+
     <div class="grid2">
       <label>Stage<select id="d_stage" onchange="patchLead('${l.id}',{stage:this.value},'Stage → '+this.value)">
         ${STAGES.map(s=>`<option ${s===l.stage?"selected":""}>${s}</option>`).join("")}</select></label>
       <label>Next follow-up<input type="date" id="d_fu" value="${l.follow_up||""}"
         onchange="patchLead('${l.id}',{follow_up:this.value},'Follow-up set: '+this.value)"></label>
-      <label>Contact<input value="${esc(l.contact)}" onchange="patchLead('${l.id}',{contact:this.value})"></label>
-      <label>Role<input value="${esc(l.role)}" onchange="patchLead('${l.id}',{role:this.value})"></label>
-      <label>Email<input id="d_email" value="${esc(l.email)}" onchange="patchLead('${l.id}',{email:this.value})"></label>
-      <label>Country<input value="${esc(l.country)}" onchange="patchLead('${l.id}',{country:this.value})"></label>
       <label>Tentative value (USD)<input type="number" value="${l.tentative_value}"
         onchange="patchLead('${l.id}',{tentative_value:this.value},'Value adjusted to $'+this.value)"></label>
       <label>Segment<select onchange="patchLead('${l.id}',{segment:this.value})">
@@ -455,7 +501,7 @@ async function openLead(id){
         onchange="patchLead('${l.id}',{notes:this.value})">${esc(l.notes)}</textarea></label>
     </div>
 
-    <div class="card" style="margin-top:14px;background:#f7faf8">
+    <div class="card" style="margin-top:14px;background:var(--peri-soft)">
       <b style="font-size:13px">✉ Email via Gmail</b>
       <div class="row" style="margin-top:8px">
         <select id="d_tpl" class="grow">${tplOpts}</select>
@@ -487,7 +533,7 @@ async function openLead(id){
       </div>
       ${(l.activities||[]).map(a=>`<div class="muted mono" style="padding:3px 0">${a.date} — ${esc(a.text)}</div>`).join("")}
     </div>
-    <div style="margin-top:18px"><button class="ghost" style="color:#b91c1c"
+    <div style="margin-top:18px"><button class="ghost" style="color:var(--mut-soft)"
       onclick="if(confirm('Delete this lead?')){api('/api/leads/${l.id}',{method:'DELETE'}).then(()=>{closeDrawer();loadLeads()})}">Delete lead</button></div>
   `);
 }
@@ -557,8 +603,8 @@ async function loadTodos(){
       <input type="checkbox" ${t.done?"checked":""} onchange="api('/api/todos/${t.id}',{method:'PATCH',body:JSON.stringify({done:this.checked})}).then(()=>{loadTodos();loadStats()})">
       <div class="due ${over?'over':''}">${esc(t.due||"—")}</div>
       <div class="txt grow">${esc(t.text)}${t.lead_org?` <span class="muted">· ${esc(t.lead_org)}</span>`:""}
-        ${t.origin==="gmail"?' <span class="pill" style="background:#ede9fe;color:#5b21b6">from Gmail</span>':""}
-        ${t.origin==="auto"?' <span class="pill" style="background:#e7e7df;color:#555">auto</span>':""}</div>
+        ${t.origin==="gmail"?' <span class="pill" style="background:var(--peri-soft);color:var(--peri-ink)">from Gmail</span>':""}
+        ${t.origin==="auto"?' <span class="pill" style="background:#eef0f6;color:var(--mut)">auto</span>':""}</div>
     </div>`}).join("")||`<p class="muted">Nothing here. To-dos appear when you add them, when you send outreach (auto follow-up), and when Gmail scanning finds asks like "send a proposal" or "let's schedule a call".</p>`;
   loadStats();
 }
@@ -580,7 +626,7 @@ async function loadTemplates(){
     <div class="card">
       <div class="row"><input class="grow" value="${esc(t.name)}" style="font-weight:600;border:none;background:none"
         onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:this.value,body:$('tb_${t.id}').value})})">
-        <button class="ghost" style="color:#b91c1c" onclick="api('/api/templates/${t.id}',{method:'DELETE'}).then(loadTemplates)">Delete</button></div>
+        <button class="ghost" style="color:var(--mut-soft)" onclick="api('/api/templates/${t.id}',{method:'DELETE'}).then(loadTemplates)">Delete</button></div>
       <textarea id="tb_${t.id}" rows="9" class="mono" style="margin-top:8px"
         onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:'${esc(t.name)}',body:this.value})})">${esc(t.body)}</textarea>
     </div>`).join("");
@@ -603,7 +649,7 @@ async function loadServices(){
     <div class="card">
       <div class="row"><input class="grow" value="${esc(s.name)}" style="font-weight:600;border:none;background:none"
         onchange="api('/api/services',{method:'POST',body:JSON.stringify({id:'${s.id}',name:this.value,description:$('sd_${s.id}').value})})">
-        <button class="ghost" style="color:#b91c1c" onclick="if(confirm('Delete this service?')){api('/api/services/${s.id}',{method:'DELETE'}).then(loadServices)}">Delete</button></div>
+        <button class="ghost" style="color:var(--mut-soft)" onclick="if(confirm('Delete this service?')){api('/api/services/${s.id}',{method:'DELETE'}).then(loadServices)}">Delete</button></div>
       <textarea id="sd_${s.id}" rows="3" style="margin-top:8px"
         onchange="api('/api/services',{method:'POST',body:JSON.stringify({id:'${s.id}',name:'${esc(s.name)}',description:this.value})})">${esc(s.description)}</textarea>
     </div>`).join("")||`<div class="empty">No services defined yet. Add one above — the bot uses it to score incoming leads.</div>`;
@@ -624,7 +670,7 @@ async function rematchAll(){
 // ---------- settings ----------
 const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_locations",
   "hunter_domains","rss_urls","rss_keywords","reliefweb_appname","reliefweb_query","worldbank_terms",
-  "zppa_query","zppa_months_back"];
+  "zppa_query","zppa_months_back","wb_tender_terms","wb_tender_countries_only","grants_gov_query"];
 async function loadSettings(){
   settings=await api("/api/settings");
   SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});
