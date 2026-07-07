@@ -62,6 +62,7 @@ SOURCE_WEIGHT = {
     "Grants.gov": 26,      # open US federal funding opportunity w/ deadline
     "TED (EU)": 30,        # open EU public tender w/ deadline, often named contact
     "SAM.gov": 26,         # open US federal contract solicitation w/ deadline
+    "GoZambiaJobs": 14,    # hiring signal only, no explicit budget/tender attached
     "RSS feed": 20,
     "Apollo": 15,          # contact data, no explicit demand signal
     "Hunter": 12,

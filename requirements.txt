@@ -4,6 +4,7 @@ requests
 feedparser
 psycopg2-binary
 ijson
+beautifulsoup4
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib

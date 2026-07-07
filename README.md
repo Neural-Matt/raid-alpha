@@ -22,6 +22,10 @@ What it does:
      development agencies like GIZ, with real deadlines)
    - SAM.gov (US federal contract solicitations, incl. USAID/State Dept
      procurements — requires your own free SAM.gov API key)
+   - GoZambiaJobs (Zambia's largest job board — flags companies hiring for
+     data/M&E/IT roles as a complementary-support signal; a lightweight,
+     transparently-identified public-page reader since no API exists — see
+     "A note on scraping" below)
    - Any RSS/Atom feeds you add (tender boards, Google Alerts = the widest net)
    - Apollo.io People Search (decision-maker contacts, your API key)
    - Hunter.io Domain Search (published emails at target companies, your API key)
@@ -159,6 +163,28 @@ To widen the net:
   SAM.gov's documented API shape but hasn't been live-verified end-to-end
   (only the account holder can get a key to test with) — if a pull errors,
   the response shape may have drifted; tell your assistant and it can fix it.
+- **GoZambiaJobs**: no key needed. Adjust **GoZambiaJobs keyword filter** in
+  Settings — recall is intentionally narrow by default (data/M&E/IT-specific
+  role titles) since a general job board otherwise floods the pipeline with
+  irrelevant postings.
+
+### A note on scraping
+
+GoZambiaJobs is the one source above with no official API — everything else
+is an official API, verified live where a free tier exists. Before adding
+it, its `robots.txt` and published terms were checked for any prohibition
+on automated access; none was found (robots.txt only disallows its own
+`/rss/` path and sets a polite 1-second crawl delay). The scraper identifies
+itself honestly via a descriptive `User-Agent` rather than pretending to be
+a browser, and only reads the public job-listing page.
+
+Several other sites researched for this project were deliberately **not**
+integrated: some actively block automated access (Cloudflare bot challenges),
+one (comesa.int) explicitly disallows AI crawlers including Claude in its
+`robots.txt`, and several job boards (BrighterMonday, Jobberman, Pnet) and
+directories explicitly disallow crawling the exact pages needed in their
+`robots.txt`. Those signals are respected — don't remove this check as a
+"fix" if a future source addition seems to be failing for the same reason.
 
 ## 3. Gmail bridge setup (one-time, ~5 minutes)
 
@@ -225,9 +251,13 @@ without it, falling back to the static keyword scoring described above.
 
 ## 5. Staying compliant (important)
 
-- All sources here are official APIs or licensed providers — keep it that way.
-  Don't add scrapers for LinkedIn or other sites that prohibit it; accounts get
-  banned and data quality is poor anyway.
+- Every source here is either an official API/licensed provider, or (in the
+  one case where no API exists — GoZambiaJobs) a scraper only added after
+  checking `robots.txt` and terms of service found no prohibition, that
+  identifies itself honestly and reads only public pages. Don't add scrapers
+  for LinkedIn or other sites that prohibit it in their terms or `robots.txt`
+  (including sites that disallow AI crawlers specifically) — accounts get
+  banned, it can create real legal exposure, and data quality is poor anyway.
 - Cold B2B email is legal in most jurisdictions if you identify yourself,
   keep it relevant, and honour opt-outs immediately (mark the lead *Lost* and
   don't email again). For EU contacts, keep outreach strictly business-relevant.
