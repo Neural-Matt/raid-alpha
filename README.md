@@ -22,6 +22,10 @@ What it does:
      development agencies like GIZ, with real deadlines)
    - SAM.gov (US federal contract solicitations, incl. USAID/State Dept
      procurements — requires your own free SAM.gov API key)
+   - SADC procurement opportunities (official regional tenders from the SADC
+     Secretariat — real deadlines and named procurement contacts with
+     email/phone; a lightweight, transparently-identified public-page reader
+     since no API exists — see "A note on scraping" below)
    - GoZambiaJobs (Zambia's largest job board — flags companies hiring for
      data/M&E/IT roles as a complementary-support signal; a lightweight,
      transparently-identified public-page reader since no API exists — see
@@ -163,6 +167,9 @@ To widen the net:
   SAM.gov's documented API shape but hasn't been live-verified end-to-end
   (only the account holder can get a key to test with) — if a pull errors,
   the response shape may have drifted; tell your assistant and it can fix it.
+- **SADC**: no key needed. Reads the SADC Secretariat's public procurement
+  opportunities page directly — typically only a handful of notices are open
+  at once, so there's no keyword filter to configure.
 - **GoZambiaJobs**: no key needed. Adjust **GoZambiaJobs keyword filter** in
   Settings — recall is intentionally narrow by default (data/M&E/IT-specific
   role titles) since a general job board otherwise floods the pipeline with
@@ -170,13 +177,15 @@ To widen the net:
 
 ### A note on scraping
 
-GoZambiaJobs is the one source above with no official API — everything else
-is an official API, verified live where a free tier exists. Before adding
-it, its `robots.txt` and published terms were checked for any prohibition
-on automated access; none was found (robots.txt only disallows its own
-`/rss/` path and sets a polite 1-second crawl delay). The scraper identifies
-itself honestly via a descriptive `User-Agent` rather than pretending to be
-a browser, and only reads the public job-listing page.
+SADC and GoZambiaJobs are the two sources above with no official API —
+everything else is an official API, verified live where a free tier exists.
+Before adding either, its `robots.txt` and published terms were checked for
+any prohibition on automated access; none was found for either site (SADC
+has no legal-notice/terms page at all; GoZambiaJobs's robots.txt only
+disallows its own `/rss/` path and sets a polite 1-second crawl delay). Both
+scrapers identify themselves honestly via a descriptive `User-Agent` rather
+than pretending to be a browser, and only read the public listing + detail
+pages needed.
 
 Several other sites researched for this project were deliberately **not**
 integrated: some actively block automated access (Cloudflare bot challenges),
@@ -252,8 +261,8 @@ without it, falling back to the static keyword scoring described above.
 ## 5. Staying compliant (important)
 
 - Every source here is either an official API/licensed provider, or (in the
-  one case where no API exists — GoZambiaJobs) a scraper only added after
-  checking `robots.txt` and terms of service found no prohibition, that
+  two cases where no API exists — SADC and GoZambiaJobs) a scraper only added
+  after checking `robots.txt` and terms of service found no prohibition, that
   identifies itself honestly and reads only public pages. Don't add scrapers
   for LinkedIn or other sites that prohibit it in their terms or `robots.txt`
   (including sites that disallow AI crawlers specifically) — accounts get
