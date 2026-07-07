@@ -249,8 +249,8 @@
           <textarea id="set_rss_urls" rows="4" placeholder="https://www.google.com/alerts/feeds/…&#10;https://reliefweb.int/jobs/rss.xml"></textarea></label>
         <label style="grid-column:1/-1">RSS keyword filter (comma-separated)
           <input id="set_rss_keywords" placeholder="m&e, baseline, dashboard, tender, rfp"></label>
-        <label style="grid-column:1/-1">ReliefWeb query override (optional)
-          <input id="set_reliefweb_query"></label>
+        <label>ReliefWeb appname (needs approval — see README)<input id="set_reliefweb_appname" placeholder="your-approved-appname"></label>
+        <label>ReliefWeb query override (optional)<input id="set_reliefweb_query"></label>
         <label style="grid-column:1/-1">World Bank search terms (comma-separated)
           <input id="set_worldbank_terms" placeholder="statistics, health systems, monitoring"></label>
         <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated)
@@ -623,7 +623,7 @@ async function rematchAll(){
 
 // ---------- settings ----------
 const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_locations",
-  "hunter_domains","rss_urls","rss_keywords","reliefweb_query","worldbank_terms",
+  "hunter_domains","rss_urls","rss_keywords","reliefweb_appname","reliefweb_query","worldbank_terms",
   "zppa_query","zppa_months_back"];
 async function loadSettings(){
   settings=await api("/api/settings");

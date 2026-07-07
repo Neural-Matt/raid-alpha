@@ -19,7 +19,7 @@ DEFAULT_QUERY = ('"monitoring and evaluation" OR "baseline survey" OR '
 def pull(settings: dict) -> list[dict]:
     query = settings.get("reliefweb_query") or DEFAULT_QUERY
     params = {
-        "appname": "nce-lead-crm",
+        "appname": settings.get("reliefweb_appname") or "nce-lead-crm",
         "query[value]": query,
         "query[operator]": "OR",
         "limit": 30,
