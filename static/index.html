@@ -167,13 +167,13 @@
 
   <!-- SOURCES -->
   <section id="tab-sources" hidden>
-    <div class="banner">These pullers use official public APIs, licensed providers, or (SADC and
-      GoZambiaJobs only, where no API exists) a transparently-identified public-page reader added
-      after checking it isn't prohibited — ReliefWeb, World Bank (projects and open tenders), ZPPA,
-      Grants.gov, TED (EU), SAM.gov (US), SADC and GoZambiaJobs, plus Apollo/Hunter with your own
-      keys, plus any RSS/Google-Alerts feeds you add. New finds are auto-scored, valued and
-      de-duplicated into the pipeline, with deadline, contact and application details pulled in
-      wherever the source provides them.</div>
+    <div class="banner">These pullers use official public APIs, licensed providers, or (SADC,
+      eTenders SA and GoZambiaJobs only, where no formal API exists) a transparently-identified
+      public-data reader added after checking it isn't prohibited — ReliefWeb, World Bank
+      (projects and open tenders), ZPPA, Grants.gov, TED (EU), SAM.gov (US), SADC, eTenders SA and
+      GoZambiaJobs, plus Apollo/Hunter with your own keys, plus any RSS/Google-Alerts feeds you
+      add. New finds are auto-scored, valued and de-duplicated into the pipeline, with deadline,
+      contact and application details pulled in wherever the source provides them.</div>
     <div id="sourceList"></div>
     <div class="card"><b style="font-size:14px">Run everything</b>
       <p class="muted" style="margin:6px 0 10px">Runs all configured sources back-to-back, then a Gmail sync.</p>
@@ -272,6 +272,8 @@
         <label>SAM.gov days back<input id="set_sam_gov_days_back" placeholder="30"></label>
         <label style="grid-column:1/-1">GoZambiaJobs keyword filter (comma-separated)
           <input id="set_gozambiajobs_query" placeholder="data analy, monitoring and evaluation, database administrator…"></label>
+        <label style="grid-column:1/-1">eTenders SA keyword filter (comma-separated)
+          <input id="set_etenders_keywords" placeholder="monitoring and evaluation, data analysis, business intelligence…"></label>
       </div>
       <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
     </div>
@@ -694,7 +696,7 @@ const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_lo
   "hunter_domains","rss_urls","rss_keywords","reliefweb_appname","reliefweb_query","worldbank_terms",
   "zppa_query","zppa_months_back","wb_tender_terms","wb_tender_countries_only","grants_gov_query",
   "ted_query","ted_days_back","sam_gov_api_key","sam_gov_query","sam_gov_days_back",
-  "gozambiajobs_query"];
+  "gozambiajobs_query","etenders_keywords"];
 async function loadSettings(){
   settings=await api("/api/settings");
   SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});

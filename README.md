@@ -26,6 +26,11 @@ What it does:
      Secretariat — real deadlines and named procurement contacts with
      email/phone; a lightweight, transparently-identified public-page reader
      since no API exists — see "A note on scraping" below)
+   - eTenders South Africa (National Treasury's tender portal — live open
+     tenders nationwide across government departments, municipalities and
+     state-owned entities, with named contacts, email, phone, bid documents
+     and closing dates; reads the same public JSON the portal's own search
+     page uses, no formal API exists — see "A note on scraping" below)
    - GoZambiaJobs (Zambia's largest job board — flags companies hiring for
      data/M&E/IT roles as a complementary-support signal; a lightweight,
      transparently-identified public-page reader since no API exists — see
@@ -170,6 +175,11 @@ To widen the net:
 - **SADC**: no key needed. Reads the SADC Secretariat's public procurement
   opportunities page directly — typically only a handful of notices are open
   at once, so there's no keyword filter to configure.
+- **eTenders SA**: no key needed. Adjust **eTenders SA keyword filter** in
+  Settings — pulls the full list of currently-open national tenders (~1,800
+  at any time) and filters locally by keyword, since the portal's own search
+  endpoint ignores the filter value it's sent (verified: it always returns
+  every record regardless of what you search).
 - **GoZambiaJobs**: no key needed. Adjust **GoZambiaJobs keyword filter** in
   Settings — recall is intentionally narrow by default (data/M&E/IT-specific
   role titles) since a general job board otherwise floods the pipeline with
@@ -177,15 +187,19 @@ To widen the net:
 
 ### A note on scraping
 
-SADC and GoZambiaJobs are the two sources above with no official API —
-everything else is an official API, verified live where a free tier exists.
-Before adding either, its `robots.txt` and published terms were checked for
-any prohibition on automated access; none was found for either site (SADC
-has no legal-notice/terms page at all; GoZambiaJobs's robots.txt only
-disallows its own `/rss/` path and sets a polite 1-second crawl delay). Both
-scrapers identify themselves honestly via a descriptive `User-Agent` rather
+SADC, eTenders SA and GoZambiaJobs are the three sources above with no
+formal, documented API — everything else is an official API, verified live
+where a free tier exists. Before adding any of them, its `robots.txt` and
+published terms were checked for any prohibition on automated access; none
+was found for any of the three (SADC and eTenders SA have no legal-notice/
+terms page at all; GoZambiaJobs's robots.txt only disallows its own `/rss/`
+path and sets a polite 1-second crawl delay). eTenders SA is a slightly
+different case from the other two — rather than parsing rendered HTML, it
+calls the same unauthenticated JSON endpoint the portal's own search page
+calls, which returns the identical data any visitor's browser receives. All
+three identify themselves honestly via a descriptive `User-Agent` rather
 than pretending to be a browser, and only read the public listing + detail
-pages needed.
+data needed.
 
 Several other sites researched for this project were deliberately **not**
 integrated: some actively block automated access (Cloudflare bot challenges),
@@ -261,9 +275,10 @@ without it, falling back to the static keyword scoring described above.
 ## 5. Staying compliant (important)
 
 - Every source here is either an official API/licensed provider, or (in the
-  two cases where no API exists — SADC and GoZambiaJobs) a scraper only added
-  after checking `robots.txt` and terms of service found no prohibition, that
-  identifies itself honestly and reads only public pages. Don't add scrapers
+  three cases where no formal API exists — SADC, eTenders SA and
+  GoZambiaJobs) a reader only added after checking `robots.txt` and terms of
+  service found no prohibition, that identifies itself honestly and reads
+  only public pages/data. Don't add scrapers
   for LinkedIn or other sites that prohibit it in their terms or `robots.txt`
   (including sites that disallow AI crawlers specifically) — accounts get
   banned, it can create real legal exposure, and data quality is poor anyway.

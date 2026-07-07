@@ -11,7 +11,7 @@ trigger, notes, url, source, posted_date, segment, dedupe_key, deadline,
 how_to_apply.
 """
 from . import (reliefweb, worldbank, wb_tenders, rss_feeds, apollo, hunter,
-               zppa, grants_gov, ted_eu, sam_gov, gozambiajobs, sadc)
+               zppa, grants_gov, ted_eu, sam_gov, gozambiajobs, sadc, etenders_sa)
 
 REGISTRY = {
     "reliefweb": reliefweb,
@@ -22,6 +22,7 @@ REGISTRY = {
     "ted_eu": ted_eu,
     "sam_gov": sam_gov,
     "sadc": sadc,
+    "etenders_sa": etenders_sa,
     "gozambiajobs": gozambiajobs,
     "rss": rss_feeds,
     "apollo": apollo,
