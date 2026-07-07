@@ -17,8 +17,9 @@ DESCRIPTION = ("Official World Bank Procurement Notices API — live open tender
 NEEDS = []
 
 API = "https://search.worldbank.org/api/v2/procnotices"
-DEFAULT_TERMS = ["monitoring and evaluation", "data collection", "survey", "statistics",
-                 "digital", "database", "capacity building", "consulting services"]
+DEFAULT_TERMS = ["monitoring and evaluation", "data collection", "statistics", "digital",
+                 "database", "capacity building", "software development", "business intelligence",
+                 "network", "call center", "cloud", "health information system"]
 PRIORITY_COUNTRIES = [
     "zambia", "zimbabwe", "malawi", "tanzania", "kenya", "uganda", "rwanda",
     "mozambique", "botswana", "namibia", "south africa", "congo", "ethiopia",
@@ -38,7 +39,7 @@ def pull(settings: dict) -> list[dict]:
     country_filter = (settings.get("wb_tender_countries_only") or "true").lower() != "false"
 
     leads, seen = [], set()
-    for term in terms[:8]:
+    for term in terms[:10]:
         try:
             resp = requests.get(API, params={
                 "format": "json",

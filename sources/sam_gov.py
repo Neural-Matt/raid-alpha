@@ -7,6 +7,12 @@ RFPs/RFQs), including USAID and State Department-issued procurements that
 often fund M&E, data collection and digital-modernisation work with
 international delivery.
 
+The `title` filter matches a single phrase against opportunity titles — it's
+not a boolean/OR field, so (unlike ZPPA/TED/ReliefWeb) this can't be pointed
+at NCE's whole 12-service keyword catalog at once. Change **SAM.gov search
+keywords** in Settings to whichever single service term you want to prioritize
+(e.g. "software development", "call center", "network").
+
 Note: this module is built to SAM.gov's documented request/response shape but
 has not been live-tested end-to-end (doing so needs a real account-issued key,
 which only the CRM's own user can obtain). Report back if the shape has
@@ -18,8 +24,8 @@ import requests
 
 NAME = "SAM.gov (US federal contracts)"
 DESCRIPTION = ("Official US federal contract-opportunities API — solicitations and "
-               "RFPs/RFQs matching your keyword, including USAID/State Dept "
-               "procurements. Requires a free SAM.gov API key.")
+               "RFPs/RFQs matching a single keyword you choose, including USAID/State "
+               "Dept procurements. Requires a free SAM.gov API key.")
 NEEDS = ["sam_gov_api_key"]
 
 API = "https://api.sam.gov/opportunities/v2/search"

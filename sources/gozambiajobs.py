@@ -21,20 +21,19 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from services_catalog import combined_keywords
+
 NAME = "GoZambiaJobs (hiring signals)"
-DESCRIPTION = ("Zambia's largest job board — flags companies hiring for data/M&E/IT "
-               "roles as a complementary-support lead signal. Lightweight public-page "
-               "scraper (no official API), identifies itself honestly, respects "
-               "the site's crawl-delay.")
+DESCRIPTION = ("Zambia's largest job board — flags companies hiring across NCE's 12 "
+               "service lines (software, AI, data, cloud, VoIP, health/insurance tech, "
+               "networking, design, training) as a complementary-support lead signal. "
+               "Lightweight public-page scraper (no official API), identifies itself "
+               "honestly, respects the site's crawl-delay.")
 NEEDS = []
 
 BASE = "https://gozambiajobs.com"
 HEADERS = {"User-Agent": "RaidAlphaLeadBot/1.0 (+https://github.com/Neural-Matt/raid-alpha)"}
-DEFAULT_KEYWORDS = ("data analy,data collection,data management,monitoring and evaluation,"
-                    "m&e officer,software developer,database administrator,digital transformation,"
-                    "geographic information system,management information system,"
-                    "information communication technology,business intelligence,"
-                    "power bi,survey,statistician")
+DEFAULT_KEYWORDS = ",".join(combined_keywords())
 MAX_LEADS = 20
 
 

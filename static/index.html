@@ -240,6 +240,14 @@
         the README.</p>
     </div>
     <div class="card">
+      <h2>Which services does Neural Cloud offer?</h2>
+      <p class="muted" style="margin:0 0 10px">Every pulled lead is classified into one of these
+        12 service lines and valued accordingly. Untick any you're not taking on right now —
+        leads will only be matched against the ones left checked.</p>
+      <div id="serviceToggleList" class="grid2"></div>
+      <div style="margin-top:12px"><button class="ghost" onclick="saveActiveServices()">Save services</button></div>
+    </div>
+    <div class="card">
       <h2>Source configuration</h2>
       <div class="grid2">
         <label>Apollo API key<input id="set_apollo_api_key" type="password"></label>
@@ -256,24 +264,25 @@
         <label>ReliefWeb query override (optional)<input id="set_reliefweb_query"></label>
         <label style="grid-column:1/-1">World Bank search terms (comma-separated)
           <input id="set_worldbank_terms" placeholder="statistics, health systems, monitoring"></label>
-        <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated)
-          <input id="set_zppa_query" placeholder="monitoring and evaluation, data collection, dashboard…"></label>
+        <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated — blank = all 12 services)
+          <input id="set_zppa_query" placeholder="Leave blank to filter on all 12 NCE service lines"></label>
         <label>ZPPA months back<input id="set_zppa_months_back" placeholder="1"></label>
         <label style="grid-column:1/-1">World Bank tender search terms (comma-separated)
-          <input id="set_wb_tender_terms" placeholder="monitoring and evaluation, data collection, survey…"></label>
+          <input id="set_wb_tender_terms" placeholder="monitoring and evaluation, software development, network…"></label>
         <label>Limit WB tenders to your priority countries?
           <select id="set_wb_tender_countries_only"><option value="true">Yes</option><option value="false">No — show all countries</option></select></label>
         <label style="grid-column:1/-1">Grants.gov search keywords
-          <input id="set_grants_gov_query" placeholder="monitoring and evaluation data collection capacity building"></label>
-        <label>TED (EU) search keywords<input id="set_ted_query" placeholder="monitoring and evaluation"></label>
+          <input id="set_grants_gov_query" placeholder="monitoring and evaluation data analytics software development"></label>
+        <label>TED (EU) search keywords (comma-separated, OR-matched)<input id="set_ted_query" placeholder="monitoring and evaluation, software development, call center…"></label>
         <label>TED days back<input id="set_ted_days_back" placeholder="60"></label>
         <label>SAM.gov API key<input id="set_sam_gov_api_key" type="password"></label>
-        <label>SAM.gov search keywords<input id="set_sam_gov_query" placeholder="monitoring and evaluation"></label>
+        <label>SAM.gov search keyword (single phrase — API doesn't support OR here)
+          <input id="set_sam_gov_query" placeholder="monitoring and evaluation"></label>
         <label>SAM.gov days back<input id="set_sam_gov_days_back" placeholder="30"></label>
-        <label style="grid-column:1/-1">GoZambiaJobs keyword filter (comma-separated)
-          <input id="set_gozambiajobs_query" placeholder="data analy, monitoring and evaluation, database administrator…"></label>
-        <label style="grid-column:1/-1">eTenders SA keyword filter (comma-separated)
-          <input id="set_etenders_keywords" placeholder="monitoring and evaluation, data analysis, business intelligence…"></label>
+        <label style="grid-column:1/-1">GoZambiaJobs keyword filter (comma-separated — blank = all 12 services)
+          <input id="set_gozambiajobs_query" placeholder="Leave blank to filter on all 12 NCE service lines"></label>
+        <label style="grid-column:1/-1">eTenders SA keyword filter (comma-separated — blank = all 12 services)
+          <input id="set_etenders_keywords" placeholder="Leave blank to filter on all 12 NCE service lines"></label>
       </div>
       <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
     </div>
@@ -288,9 +297,21 @@ const STAGES=["New","Researched","Contacted","Replied","Meeting","Proposal","Won
 const STAGE_C={New:"#eef0f6,#545e78",Researched:"#edf0fd,#1c2b5e",Contacted:"#fff6d6,#4a3900",
   Replied:"#dbe2fb,#1c2b5e",Meeting:"#ffefb0,#4a3900",Proposal:"#d9e0f0,#00214d",
   Won:"#ffde59,#00214d",Lost:"#8790a6,#fff"};
-const SEGMENTS=["NGO / Donor (M&E, data collection)","Financial services (BI, reporting)",
-  "Corporate (analytics, automation)","Public sector","Migration / modernization",
-  "Training & capacity building","Platform / product"];
+const SERVICE_CATALOG=[
+  {key:"custom_software",name:"Custom Software Development"},
+  {key:"ai_automation",name:"AI Solutions & Intelligent Automation"},
+  {key:"data_analytics",name:"Data Analytics, BI & Research Services"},
+  {key:"cloud_infrastructure",name:"Cloud, Hosting & Infrastructure Services"},
+  {key:"voip_callcenter",name:"Call Center, VoIP & Communication Systems"},
+  {key:"healthtech",name:"Healthcare & Pharmacy Technology Solutions"},
+  {key:"insurtech",name:"Insurance Technology Solutions"},
+  {key:"automation_transformation",name:"Business Process Automation & Digital Transformation"},
+  {key:"web_mobile_dev",name:"Web & Mobile App Development"},
+  {key:"design_ux",name:"UI/UX Design & Product Experience"},
+  {key:"networking_connectivity",name:"Networking, Connectivity & Managed IT Solutions"},
+  {key:"training_support",name:"Training, Support & Capacity Building"},
+];
+const SEGMENTS=SERVICE_CATALOG.map(s=>s.name);
 let leads=[],templates=[],settings={},stageFilter="All";
 const $=id=>document.getElementById(id);
 const api=(url,opt)=>fetch(url,opt?Object.assign({headers:{'Content-Type':'application/json'}},opt):undefined).then(r=>r.json());
@@ -701,6 +722,12 @@ async function loadSettings(){
   settings=await api("/api/settings");
   SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});
   $("senderName").value=settings.sender_name||"";
+  const activeRaw=settings.active_services||"";
+  const active=activeRaw?activeRaw.split(",").map(s=>s.trim()):SERVICE_CATALOG.map(s=>s.key);
+  $("serviceToggleList").innerHTML=SERVICE_CATALOG.map(s=>`
+    <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+      <input type="checkbox" id="svctgl_${s.key}" ${active.includes(s.key)?"checked":""}> ${esc(s.name)}
+    </label>`).join("");
   const g=await api("/api/gmail/status");
   $("gmailConnectBtn").hidden=!g.client_configured||g.authorized;
   $("gmailStatus").innerHTML=g.client_configured
@@ -710,6 +737,12 @@ async function loadSettings(){
 async function saveSettingForm(){
   const data={};SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)data[k]=el.value});
   await saveSettings(data);toast("Settings saved");
+}
+async function saveActiveServices(){
+  const keys=SERVICE_CATALOG.filter(s=>$("svctgl_"+s.key).checked).map(s=>s.key);
+  if(!keys.length)return toast("Keep at least one service active");
+  await saveSettings({active_services:keys.join(",")});
+  toast("Services saved — re-run sources or re-match to apply");
 }
 async function saveSettings(data){settings=Object.assign(settings,data);
   await api("/api/settings",{method:"POST",body:JSON.stringify(data)})}

@@ -20,20 +20,15 @@ try:
 except ImportError:
     ijson = None
 
+from services_catalog import combined_keywords
+
 NAME = "ZPPA (Zambia public tenders)"
 DESCRIPTION = ("Official ZPPA OCDS bulk tender data (zppa.org.zm) — recent open "
-               "government tenders across Zambia, filtered to M&E / data / IT keywords.")
+               "government tenders across Zambia, filtered to NCE's 12 service lines.")
 NEEDS = []
 
 LIST_URL = "https://www.zppa.org.zm/ocds/services/recordpackage/getrecordpackagelist"
-DEFAULT_QUERY = (
-    "monitoring and evaluation,baseline survey,endline survey,data collection,"
-    "household survey,impact assessment,survey firm,database system,"
-    "management information system,business intelligence,power bi,dashboard,"
-    "data analyst,data analytics,statistics office,census,information system,"
-    "software development,web application,erp system,system integration,"
-    "capacity building training,data literacy"
-)
+DEFAULT_QUERY = ",".join(combined_keywords())
 OPEN_STATUSES = {"planned", "active", "pending"}
 MAX_LEADS = 50
 MONTHS_BACK = 1

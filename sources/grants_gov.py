@@ -15,12 +15,17 @@ import requests
 
 NAME = "Grants.gov (US federal funding)"
 DESCRIPTION = ("Official US government grants API — federal funding opportunities "
-               "matching your keywords, enriched with contact details and deadlines.")
+               "across NCE's service lines, enriched with contact details and deadlines.")
 NEEDS = []
 
 SEARCH_API = "https://api.grants.gov/v1/api/search2"
 DETAIL_API = "https://api.grants.gov/v1/api/fetchOpportunity"
-DEFAULT_QUERY = "monitoring and evaluation data collection capacity building"
+# Grants.gov's keyword search is a loose relevance ranking, not a strict
+# boolean filter (verified: hit counts stay in the thousands regardless of
+# how specific the phrase is) — a huge keyword blob dilutes rather than
+# narrows the top results, so this stays a short, representative phrase
+# rather than the full 250-term catalog.
+DEFAULT_QUERY = "monitoring and evaluation data analytics software development digital transformation capacity building"
 MAX_LEADS = 12
 DETAIL_TIMEOUT = 10
 DETAIL_WORKERS = 6

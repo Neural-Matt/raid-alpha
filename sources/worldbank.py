@@ -1,20 +1,25 @@
 """World Bank Projects & Operations — official open-data API.
 
-Active, funded projects in data/statistics/health/education sectors are
-budgeted programmes that routinely subcontract local data collection, M&E
-and analytics work. The implementing agency is the lead.
+Active, funded projects across data/statistics/health/education/digital
+sectors are budgeted programmes that routinely subcontract local software,
+data, connectivity and capacity-building work. The implementing agency is
+the lead. Each term below runs as its own API call (the endpoint doesn't
+support a combined OR query), so the default list stays a representative
+sample across NCE's 12 service lines rather than the full catalog.
 """
 import requests
 
 NAME = "World Bank active projects"
-DESCRIPTION = ("World Bank open-data Projects API — active funded projects "
-               "(statistics, health, education, governance) in Southern & Eastern "
-               "Africa that subcontract data and M&E work.")
+DESCRIPTION = ("World Bank open-data Projects API — active funded projects across "
+               "statistics, health, education, digital and governance in Southern & "
+               "Eastern Africa that subcontract work across NCE's service lines.")
 NEEDS = []
 
 API = "https://search.worldbank.org/api/v2/projects"
 COUNTRIES = ["ZM", "MW", "TZ", "ZW", "KE", "UG", "RW", "MZ", "BW", "NA"]
-DEFAULT_TERMS = ["statistics", "health systems", "monitoring", "digital", "education data"]
+DEFAULT_TERMS = ["statistics", "health systems", "monitoring", "digital", "education data",
+                  "digital transformation", "e-government", "connectivity",
+                  "financial inclusion", "call center"]
 
 
 def pull(settings: dict) -> list[dict]:
@@ -22,7 +27,7 @@ def pull(settings: dict) -> list[dict]:
              (settings.get("worldbank_terms") or ",".join(DEFAULT_TERMS)).split(",")
              if t.strip()]
     leads, seen = [], set()
-    for term in terms[:6]:
+    for term in terms[:8]:
         try:
             resp = requests.get(API, params={
                 "format": "json",
@@ -60,7 +65,6 @@ def pull(settings: dict) -> list[dict]:
                 "url": p.get("url", "") or f"https://projects.worldbank.org/en/projects-operations/project-detail/{pid}",
                 "source": "World Bank",
                 "posted_date": str(p.get("boardapprovaldate", ""))[:10],
-                "segment": "Public sector",
                 "dedupe_key": f"wb|{pid}",
             })
     return leads

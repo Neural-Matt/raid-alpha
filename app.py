@@ -42,7 +42,7 @@ def api_lead(lead_id: str):
 async def api_add_lead(req: Request):
     data = await req.json()
     data["source"] = data.get("source") or "Manual"
-    lead = enrich.score_lead(data)
+    lead = enrich.score_lead(data, db.all_settings())
     # manual adds should never be silently dropped as dupes
     lead["dedupe_key"] = f"manual|{db.uid()}"
     lid = db.insert_lead(lead, "Lead added manually")
@@ -100,7 +100,7 @@ def _run_source(key: str) -> dict:
     added, skipped = 0, 0
     new_lead_ids = []
     for raw in raw_leads:
-        lead = enrich.score_lead(raw)
+        lead = enrich.score_lead(raw, settings)
         lid = db.insert_lead(lead, f"Pulled from {lead.get('source', key)}")
         if lid:
             added += 1

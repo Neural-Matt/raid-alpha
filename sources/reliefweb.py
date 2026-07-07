@@ -1,19 +1,30 @@
 """ReliefWeb — official public API (https://apidoc.reliefweb.int/).
 
-Pulls recent consultancy/job postings matching NCE's service keywords.
-These postings are strong buying signals: an organisation actively looking
-for M&E / data collection / analytics capacity right now.
+Pulls recent consultancy/job postings matching NCE's service keywords across
+its 12 service lines. These postings are strong buying signals: an
+organisation actively looking for that capacity right now. ReliefWeb's
+audience skews NGO/UN/humanitarian, so the default query is a representative
+subset (not the full 250-keyword catalog) weighted toward the services that
+sector actually buys — data/M&E, health systems, digital transformation,
+capacity building — while still covering software and cloud work.
 """
 import requests
 
 NAME = "ReliefWeb consultancies"
-DESCRIPTION = ("Official ReliefWeb API — recent M&E, survey, data-collection and "
-               "analytics consultancy postings from NGOs and UN agencies.")
+DESCRIPTION = ("Official ReliefWeb API — recent consultancy postings from NGOs and UN "
+               "agencies across NCE's service lines (M&E/data, software, health "
+               "systems, digital transformation, capacity building).")
 NEEDS = []
 
 API = "https://api.reliefweb.int/v2/jobs"
-DEFAULT_QUERY = ('"monitoring and evaluation" OR "baseline survey" OR '
-                 '"data collection" OR "data analyst" OR "M&E" OR dashboard')
+_DEFAULT_TERMS = [
+    "monitoring and evaluation", "baseline survey", "data collection", "data analyst",
+    "business intelligence", "dashboard", "software developer", "database administrator",
+    "digital transformation", "capacity building", "cloud migration",
+    "geographic information system", "management information system",
+    "web application development", "health information system", "process automation",
+]
+DEFAULT_QUERY = " OR ".join(f'"{t}"' for t in _DEFAULT_TERMS)
 
 
 def pull(settings: dict) -> list[dict]:

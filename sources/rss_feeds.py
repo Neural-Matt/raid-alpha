@@ -10,13 +10,18 @@ which effectively turns Google's whole index into a lead source, legally.
 """
 import feedparser
 
+from services_catalog import combined_keywords
+
 NAME = "RSS / Atom feeds"
 DESCRIPTION = ("Pulls from any feed URLs you add in Settings — tender boards, "
-               "procurement portals, Google Alerts. The widest legal net.")
+               "procurement portals, Google Alerts. The widest legal net, filtered "
+               "to NCE's 12 service lines plus generic procurement-demand terms.")
 NEEDS = ["rss_urls"]
 
-DEFAULT_KEYWORDS = ["m&e", "monitoring", "evaluation", "baseline", "survey", "data",
-                    "dashboard", "analytics", "rfp", "tender", "consultan", "bi "]
+DEFAULT_KEYWORDS = combined_keywords() + [
+    "rfp", "request for proposal", "request for quotation", "invitation to bid",
+    "expression of interest", "tender",
+]
 
 
 def pull(settings: dict) -> list[dict]:

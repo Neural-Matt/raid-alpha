@@ -6,20 +6,37 @@ locally against any Postgres database (including your Supabase project).
 
 What it does:
 
+0. **Classifies every lead into one of NCE's 12 official service lines**
+   (Custom Software Development, AI Solutions & Intelligent Automation, Data
+   Analytics/BI/Research, Cloud & Infrastructure, Call Center/VoIP,
+   Healthcare & Pharmacy Tech, Insurance Tech, Business Process Automation,
+   Web & Mobile App Development, UI/UX Design, Networking & Connectivity,
+   Training & Capacity Building) — see **Settings → "Which services does
+   Neural Cloud offer?"** to toggle which of the 12 are currently in scope.
+   Unticking a service excludes it from classification (a lead can only ever
+   land in a service you've left checked) and every keyword-driven source
+   below defaults to searching across whichever services are active. The
+   full keyword catalog for all 12 lives in `services_catalog.py` — it's the
+   single source of truth every source module and the scorer both read from.
 1. **Pull leads** at the press of a button from legal, official sources:
-   - ReliefWeb API (live M&E / data-collection consultancy postings — includes
-     application deadline and how-to-apply text where the posting has it)
-   - World Bank Projects API (active funded projects in your region)
-   - World Bank Procurement Notices API (live open tenders — real deadlines and
-     named procurement contacts with email/phone, straight from the notice)
-   - ZPPA OCDS bulk data (open Zambian government tenders, filtered to your
-     keywords, with deadline + submission method where published)
+   - ReliefWeb API (consultancy postings from NGOs/UN agencies — a curated
+     slice of NCE's 12 service lines weighted toward what that sector buys —
+     with application deadline and how-to-apply text where the posting has it)
+   - World Bank Projects API (active funded projects across statistics,
+     health, education, digital and governance in your region)
+   - World Bank Procurement Notices API (live open tenders across all 12
+     service lines — real deadlines and named procurement contacts with
+     email/phone, straight from the notice)
+   - ZPPA OCDS bulk data (open Zambian government tenders, filtered to
+     whichever of NCE's 12 service lines are active, with deadline +
+     submission method where published)
    - Grants.gov (US federal funding opportunities — many open to international
      applicants — enriched with the actual grants contact, deadline, funding
      ceiling and eligibility text)
    - TED — Tenders Electronic Daily (official EU public procurement — live
      tenders from European Commission DGs, national ministries and
-     development agencies like GIZ, with real deadlines)
+     development agencies, OR-matched across several service lines at once,
+     with real deadlines)
    - SAM.gov (US federal contract solicitations, incl. USAID/State Dept
      procurements — requires your own free SAM.gov API key)
    - SADC procurement opportunities (official regional tenders from the SADC
@@ -27,14 +44,14 @@ What it does:
      email/phone; a lightweight, transparently-identified public-page reader
      since no API exists — see "A note on scraping" below)
    - eTenders South Africa (National Treasury's tender portal — live open
-     tenders nationwide across government departments, municipalities and
-     state-owned entities, with named contacts, email, phone, bid documents
-     and closing dates; reads the same public JSON the portal's own search
-     page uses, no formal API exists — see "A note on scraping" below)
-   - GoZambiaJobs (Zambia's largest job board — flags companies hiring for
-     data/M&E/IT roles as a complementary-support signal; a lightweight,
-     transparently-identified public-page reader since no API exists — see
+     tenders nationwide across all 12 service lines, with named contacts,
+     email, phone, bid documents and closing dates; reads the same public
+     JSON the portal's own search page uses, no formal API exists — see
      "A note on scraping" below)
+   - GoZambiaJobs (Zambia's largest job board — flags companies hiring across
+     any of NCE's 12 service lines as a complementary-support signal; a
+     lightweight, transparently-identified public-page reader since no API
+     exists — see "A note on scraping" below)
    - Any RSS/Atom feeds you add (tender boards, Google Alerts = the widest net)
    - Apollo.io People Search (decision-maker contacts, your API key)
    - Hunter.io Domain Search (published emails at target companies, your API key)
@@ -133,9 +150,13 @@ already within that limit.
 
 ## 2. First pull
 
-Go to **Sources → Run all sources**. ReliefWeb, World Bank (both projects and
-tenders), ZPPA, and Grants.gov need no keys, so you'll have a scored pipeline
-within a minute.
+First, check **Settings → "Which services does Neural Cloud offer?"** — all
+12 are active by default. Untick anything you're not taking on right now;
+every keyword-driven source below (and the scorer itself) respects this list.
+
+Then go to **Sources → Run all sources**. ReliefWeb, World Bank (both projects
+and tenders), ZPPA, and Grants.gov need no keys, so you'll have a scored
+pipeline within a minute.
 
 To widen the net:
 
@@ -152,8 +173,9 @@ To widen the net:
 - **Hunter** (hunter.io → API): paste your key and list target-company domains.
 - **ZPPA**: pulls the most recent month of Zambia's official government tender
   data and keeps only tenders matching **Settings → ZPPA keyword filter**
-  (defaults to M&E/data/IT terms — broaden it if you want wider coverage;
-  ZPPA covers every sector, so an empty filter would flood your pipeline).
+  (defaults to all active service lines' keywords — ZPPA covers every sector
+  of government spending, so *some* filter is essential or it floods the
+  pipeline with unrelated tenders like food and vehicle procurement).
 - **World Bank open tenders**: live procurement notices with real deadlines
   and named contacts. Defaults to your priority African countries — flip
   **Settings → Limit WB tenders to your priority countries?** to "No" for
@@ -177,13 +199,14 @@ To widen the net:
   at once, so there's no keyword filter to configure.
 - **eTenders SA**: no key needed. Adjust **eTenders SA keyword filter** in
   Settings — pulls the full list of currently-open national tenders (~1,800
-  at any time) and filters locally by keyword, since the portal's own search
-  endpoint ignores the filter value it's sent (verified: it always returns
-  every record regardless of what you search).
+  at any time) and filters locally by keyword (defaults to all active
+  service lines), since the portal's own search endpoint ignores the filter
+  value it's sent (verified: it always returns every record regardless of
+  what you search).
 - **GoZambiaJobs**: no key needed. Adjust **GoZambiaJobs keyword filter** in
-  Settings — recall is intentionally narrow by default (data/M&E/IT-specific
-  role titles) since a general job board otherwise floods the pipeline with
-  irrelevant postings.
+  Settings (defaults to all active service lines) — a general job board
+  needs *some* filter or every accounting/sales/driving vacancy in Zambia
+  floods the pipeline alongside the handful of relevant tech roles.
 
 ### A note on scraping
 
@@ -208,6 +231,23 @@ one (comesa.int) explicitly disallows AI crawlers including Claude in its
 directories explicitly disallow crawling the exact pages needed in their
 `robots.txt`. Those signals are respected — don't remove this check as a
 "fix" if a future source addition seems to be failing for the same reason.
+
+**Facebook is a hard no.** Its `robots.txt` opens with "Collection of data on
+Facebook through automated means is prohibited unless you have express
+written permission from Facebook," and separately, by name, disallows
+`ClaudeBot` specifically — the exact tool that would be used to build this.
+There's no compliant way to pull public posts, Marketplace listings, or
+Group content as a lead source; Meta has also successfully sued scrapers
+over this (Meta v. Bright Data and others) even where the data was
+technically public. The Graph API doesn't help either — it only grants
+access to Pages/ad accounts *you* administer, not to discovering other
+companies' posts. If you want Facebook in the loop, the practical options
+are: (1) keep using **Add lead** to manually drop in anything you spot
+there yourself, or (2) if NCE runs its own Facebook Page and takes inbound
+messages/Lead Ads through it, that could become a future *inbound* bridge
+(like the Gmail one) using your own Page's official access token — a
+different, compliant integration from "scrape other people's posts," and
+not built here since it wasn't asked for.
 
 ## 3. Gmail bridge setup (one-time, ~5 minutes)
 

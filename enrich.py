@@ -10,48 +10,7 @@ from __future__ import annotations
 import datetime
 import json
 
-SEGMENT_KEYWORDS = {
-    "NGO / Donor (M&E, data collection)": [
-        "m&e", "monitoring and evaluation", "baseline", "endline", "survey",
-        "data collection", "enumerat", "kobo", "odk", "surveycto", "evaluation",
-        "impact assessment", "household survey", "field research", "humanitarian",
-    ],
-    "Financial services (BI, reporting)": [
-        "bank", "microfinance", "insurance", "fintech", "regulatory reporting",
-        "financial reporting", "credit", "lending",
-    ],
-    "Corporate (analytics, automation)": [
-        "dashboard", "business intelligence", "power bi", "tableau", "analytics",
-        "kpi", "automation", "rpa", "reporting",
-    ],
-    "Public sector": [
-        "ministry", "government", "public sector", "statistics office", "census",
-        "national statistic", "e-government",
-    ],
-    "Migration / modernization": [
-        "migration", "legacy", "modernization", "modernisation", "cloud migration",
-        "database", "system integration", "erp",
-    ],
-    "Training & capacity building": [
-        "training", "capacity building", "workshop", "upskill", "data literacy",
-        "curriculum",
-    ],
-    "Platform / product": [
-        "platform", "portal", "mis ", "management information system", "web application",
-        "data system",
-    ],
-}
-
-# Typical engagement value range per segment (USD) — used for tentative pipeline value.
-SEGMENT_VALUE = {
-    "NGO / Donor (M&E, data collection)": (15000, 80000),
-    "Financial services (BI, reporting)": (10000, 60000),
-    "Corporate (analytics, automation)": (8000, 45000),
-    "Public sector": (20000, 120000),
-    "Migration / modernization": (12000, 70000),
-    "Training & capacity building": (3000, 20000),
-    "Platform / product": (25000, 150000),
-}
+from services_catalog import SERVICES, active_keys
 
 # How much we trust each source as a *buying signal*.
 SOURCE_WEIGHT = {
@@ -83,32 +42,44 @@ HOT_KEYWORDS = [
 ]
 
 
-def classify_segment(text: str) -> tuple[str, int]:
-    """Return (best segment, keyword hit count)."""
+NAME_TO_KEY = {v["name"]: k for k, v in SERVICES.items()}
+
+
+def classify_segment(text: str, keys: list[str] | None = None) -> tuple[str, int]:
+    """Return (best service key, keyword hit count) among the given (or all) services."""
     text = text.lower()
-    best, best_hits = "Corporate (analytics, automation)", 0
-    for segment, kws in SEGMENT_KEYWORDS.items():
-        hits = sum(1 for kw in kws if kw in text)
+    keys = keys or list(SERVICES.keys())
+    best, best_hits = (keys[0] if keys else next(iter(SERVICES))), 0
+    for key in keys:
+        svc = SERVICES.get(key)
+        if not svc:
+            continue
+        hits = sum(1 for kw in svc["keywords"] if kw in text)
         if hits > best_hits:
-            best, best_hits = segment, hits
+            best, best_hits = key, hits
     return best, best_hits
 
 
-def score_lead(raw: dict) -> dict:
+def score_lead(raw: dict, settings: dict | None = None) -> dict:
     """Take a raw lead dict from a source and return an enriched lead dict.
 
-    Also attaches `score_breakdown` (a JSON list of {label, points} the score
-    was built from) and `value_note` (a one-line explanation of the tentative
-    value) so the UI can show its work instead of presenting a bare number.
+    `settings` (if given) supplies `active_services` — the subset of NCE's 12
+    service lines currently in scope, restricting which one a lead can be
+    classified into. Also attaches `score_breakdown` (a JSON list of
+    {label, points} the score was built from) and `value_note` (a one-line
+    explanation of the tentative value) so the UI can show its work instead
+    of presenting a bare number.
     """
     blob = " ".join(str(raw.get(k, "")) for k in
-                    ("org", "trigger", "notes", "role", "segment")).lower()
+                    ("org", "trigger", "notes", "role", "how_to_apply")).lower()
 
-    segment = raw.get("segment") or ""
-    if segment:
-        hits = sum(1 for kw in SEGMENT_KEYWORDS.get(segment, []) if kw in blob)
+    keys = active_keys(settings or {})
+    seg_key = NAME_TO_KEY.get(raw.get("segment") or "")
+    if seg_key and seg_key in keys:
+        hits = sum(1 for kw in SERVICES[seg_key]["keywords"] if kw in blob)
     else:
-        segment, hits = classify_segment(blob)
+        seg_key, hits = classify_segment(blob, keys)
+    segment = SERVICES[seg_key]["name"]
 
     breakdown = []
     source = raw.get("source") or "unknown"
@@ -157,7 +128,7 @@ def score_lead(raw: dict) -> dict:
         breakdown.append({"label": "Clamped to 5-100 range", "points": clamped - score})
     score = clamped
 
-    lo, hi = SEGMENT_VALUE.get(segment, (8000, 40000))
+    lo, hi = SERVICES[seg_key]["value_range"]
     tentative = int(lo + (hi - lo) * (score / 100))
 
     lead = dict(raw)

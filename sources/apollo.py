@@ -14,8 +14,9 @@ DESCRIPTION = ("Apollo People Search API — pulls named decision-makers (with e
 NEEDS = ["apollo_api_key"]
 
 API = "https://api.apollo.io/api/v1/mixed_people/search"
-DEFAULT_TITLES = ["Head of Monitoring and Evaluation", "M&E Manager", "Chief Operating Officer",
-                  "Head of Data", "IT Director", "Country Director"]
+DEFAULT_TITLES = ["Chief Operating Officer", "Chief Technology Officer", "IT Director",
+                  "Head of Data", "Head of Monitoring and Evaluation", "Head of Digital",
+                  "Head of Customer Experience", "Operations Director", "Country Director"]
 DEFAULT_LOCATIONS = ["Zambia", "Kenya", "Tanzania", "South Africa", "Uganda"]
 
 

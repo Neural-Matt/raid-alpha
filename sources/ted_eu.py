@@ -2,8 +2,12 @@
 
 api.ted.europa.eu/v3/notices/search is free, public, and requires no API key
 or registration. Publishes every high-value public contract notice across
-the EU — a strong source for European institutions/agencies procuring
-M&E, data, or digital-modernisation work with international bidders welcome.
+the EU — a strong source for European institutions/agencies procuring across
+NCE's 12 service lines, with international bidders welcome.
+
+TED's expert query syntax supports parenthesized OR-chains of `description-lot
+~ "phrase"` clauses (verified live) — so the default query below searches for
+any of several representative phrases at once rather than a single term.
 """
 import datetime
 
@@ -11,11 +15,20 @@ import requests
 
 NAME = "TED (EU public procurement)"
 DESCRIPTION = ("Official EU Tenders Electronic Daily API — live European public "
-               "procurement notices matching your keywords, with real deadlines.")
+               "procurement notices matching NCE's service keywords, with real deadlines.")
 NEEDS = []
 
 API = "https://api.ted.europa.eu/v3/notices/search"
-DEFAULT_QUERY = "monitoring and evaluation"
+# a curated, representative slice of the full catalog — TED's query has a
+# practical length limit, so this isn't the whole 250-keyword list
+_DEFAULT_TERMS = [
+    "monitoring and evaluation", "data analysis", "business intelligence",
+    "software development", "artificial intelligence", "cloud migration",
+    "digital transformation", "call center", "network design", "web application development",
+    "mobile app development", "capacity building", "health information system",
+    "insurance", "process automation",
+]
+DEFAULT_QUERY = ",".join(_DEFAULT_TERMS)
 FIELDS = ["notice-title", "buyer-name", "buyer-country", "publication-number",
           "publication-date", "deadline-receipt-tender-date-lot", "description-lot"]
 MAX_LEADS = 20
@@ -33,11 +46,14 @@ def _first(value):
 
 def pull(settings: dict) -> list[dict]:
     query = settings.get("ted_query") or DEFAULT_QUERY
+    terms = [t.strip() for t in query.split(",") if t.strip()]
     days_back = int(settings.get("ted_days_back") or 60)
+    # search description text (titles are mostly generic CPV category names —
+    # the real detail, and our best recall, is in the description); chain
+    # every configured term with OR so any one match qualifies the notice
+    or_clause = " OR ".join(f'description-lot ~ "{t}"' for t in terms)
     resp = requests.post(API, json={
-        # search description text (titles are mostly generic CPV category
-        # names — the real detail, and our best recall, is in the description)
-        "query": f'description-lot ~ "{query}" AND publication-date >= today(-{days_back})',
+        "query": f'({or_clause}) AND publication-date >= today(-{days_back})',
         "fields": FIELDS,
         "limit": MAX_LEADS,
         "scope": "ALL",

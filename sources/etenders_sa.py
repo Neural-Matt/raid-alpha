@@ -18,12 +18,15 @@ of published/open tenders.
 """
 import requests
 
+from services_catalog import combined_keywords
+
 NAME = "eTenders South Africa"
 DESCRIPTION = ("South African National Treasury tender portal — live open "
                "tenders nationwide (government departments, municipalities, "
                "state-owned entities) with named contacts, email, phone and "
-               "closing dates. No API exists; reads the same public JSON "
-               "the portal's own search page uses.")
+               "closing dates, filtered to NCE's 12 service lines. No API "
+               "exists; reads the same public JSON the portal's own search "
+               "page uses.")
 NEEDS = []
 
 BASE = "https://www.etenders.gov.za"
@@ -35,15 +38,9 @@ HEADERS = {
     "Referer": OPPORTUNITIES_URL,
 }
 MAX_ROWS = 2500   # comfortably covers the ~1800 currently-open tenders
-MAX_LEADS = 15
+MAX_LEADS = 30
 
-DEFAULT_KEYWORDS = (
-    "monitoring and evaluation,m&e,data collection,data analysis,data management,"
-    "baseline survey,endline survey,household survey,business intelligence,dashboard,"
-    "database administrator,management information system,geographic information system,"
-    "statistician,statistics,impact assessment,data capturing,digital transformation,"
-    "power bi,survey firm,socio-economic survey"
-)
+DEFAULT_KEYWORDS = ",".join(combined_keywords())
 
 _COLUMNS = ["0", "category", "description", "eSubmission", "date_Published", "closing_Date", "actions"]
 
