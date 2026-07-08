@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS leads (
     value_note TEXT DEFAULT '',
     deadline TEXT DEFAULT '',
     how_to_apply TEXT DEFAULT '',
+    alignment_pct INTEGER DEFAULT 0,
     created_at TEXT,
     updated_at TEXT
 );
@@ -156,6 +157,7 @@ def init() -> None:
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS deadline TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS how_to_apply TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS alignment_pct INTEGER DEFAULT 0")
     cur.execute("SELECT COUNT(*) AS c FROM templates")
     if cur.fetchone()["c"] == 0:
         for name, body in DEFAULT_TEMPLATES:
@@ -201,11 +203,24 @@ def get_lead(lead_id):
 LEAD_FIELDS = ["org", "contact", "role", "email", "phone", "country", "segment", "source",
                "stage", "score", "tentative_value", "trigger", "notes", "url", "follow_up",
                "matched_service", "match_score", "match_reasoning",
-               "score_breakdown", "value_note", "deadline", "how_to_apply"]
+               "score_breakdown", "value_note", "deadline", "how_to_apply", "alignment_pct"]
+
+
+def is_past_deadline(deadline: str) -> bool:
+    if not deadline:
+        return False
+    try:
+        return datetime.date.fromisoformat(str(deadline)[:10]) < datetime.date.today()
+    except ValueError:
+        return False
 
 
 def insert_lead(data: dict, log: str = "Lead created"):
-    """Insert a lead. Returns id, or None if it's a duplicate (dedupe_key clash)."""
+    """Insert a lead. Returns id, or None if it's a duplicate (dedupe_key clash)
+    or its application deadline has already passed — a lead you can no longer
+    act on has no place cluttering an active pipeline."""
+    if is_past_deadline(data.get("deadline")):
+        return None
     con = connect()
     cur = con.cursor()
     lid = uid()
@@ -214,6 +229,7 @@ def insert_lead(data: dict, log: str = "Lead created"):
     values["score"] = int(data.get("score") or 0)
     values["tentative_value"] = int(data.get("tentative_value") or 0)
     values["match_score"] = int(data.get("match_score") or 0)
+    values["alignment_pct"] = int(data.get("alignment_pct") or 0)
     values["score_breakdown"] = data.get("score_breakdown") or "[]"
     values["stage"] = data.get("stage") or "New"
     try:
@@ -262,6 +278,28 @@ def delete_lead(lead_id):
     con.commit()
     cur.close()
     con.close()
+
+
+def delete_expired_leads() -> int:
+    """Remove active-pipeline leads whose application deadline has passed.
+
+    Won/Lost leads are left alone even if their deadline has passed — those
+    are resolved outcomes, not dead weight sitting in an active pipeline.
+    """
+    con = connect()
+    cur = con.cursor()
+    cur.execute(
+        "SELECT id FROM leads WHERE deadline <> '' AND deadline < %s "
+        "AND stage NOT IN ('Won','Lost')", (today(),))
+    ids = [r["id"] for r in cur.fetchall()]
+    for lid in ids:
+        for table in ("activities", "emails", "todos"):
+            cur.execute(f"DELETE FROM {table} WHERE lead_id=%s", (lid,))
+        cur.execute("DELETE FROM leads WHERE id=%s", (lid,))
+    con.commit()
+    cur.close()
+    con.close()
+    return len(ids)
 
 
 def find_lead_by_email(email: str):

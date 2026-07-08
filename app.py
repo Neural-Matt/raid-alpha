@@ -43,6 +43,9 @@ async def api_add_lead(req: Request):
     data = await req.json()
     data["source"] = data.get("source") or "Manual"
     lead = enrich.score_lead(data, db.all_settings())
+    if db.is_past_deadline(lead.get("deadline")):
+        return JSONResponse(
+            {"error": "That deadline has already passed — nothing was added."}, status_code=400)
     # manual adds should never be silently dropped as dupes
     lead["dedupe_key"] = f"manual|{db.uid()}"
     lid = db.insert_lead(lead, "Lead added manually")
@@ -78,6 +81,13 @@ def api_delete_lead(lead_id: str):
     return {"ok": True}
 
 
+@app.post("/api/leads/cleanup-expired")
+def api_cleanup_expired():
+    """Remove active-pipeline leads whose application deadline has passed."""
+    removed = db.delete_expired_leads()
+    return {"removed": removed}
+
+
 # ---------------- sources ----------------
 
 @app.get("/api/sources")
@@ -97,10 +107,13 @@ def _run_source(key: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-    added, skipped = 0, 0
+    added, skipped, expired = 0, 0, 0
     new_lead_ids = []
     for raw in raw_leads:
         lead = enrich.score_lead(raw, settings)
+        if db.is_past_deadline(lead.get("deadline")):
+            expired += 1
+            continue
         lid = db.insert_lead(lead, f"Pulled from {lead.get('source', key)}")
         if lid:
             added += 1
@@ -124,7 +137,8 @@ def _run_source(key: str) -> dict:
                     "match_reasoning": m["reasoning"],
                 })
 
-    return {"added": added, "duplicates_skipped": skipped, "fetched": len(raw_leads)}
+    return {"added": added, "duplicates_skipped": skipped, "expired_skipped": expired,
+            "fetched": len(raw_leads)}
 
 
 @app.post("/api/sources/{key}/run")
@@ -154,7 +168,8 @@ def api_cron_run_all(request: Request):
         gmail_result = gmail_bridge.sync()
     except Exception as e:
         gmail_result = {"error": str(e)}
-    return {"sources": results, "gmail": gmail_result}
+    expired_removed = db.delete_expired_leads()
+    return {"sources": results, "gmail": gmail_result, "expired_removed": expired_removed}
 
 
 # ---------------- services ----------------

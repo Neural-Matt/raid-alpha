@@ -72,10 +72,18 @@
   .s-hi{background:var(--gold);color:var(--gold-ink)}.s-md{background:var(--peri-soft);color:var(--peri-ink)}.s-lo{background:#eef0f6;color:var(--mut-soft)}
   .avatar{width:32px;height:32px;border-radius:9px;background:var(--peri-soft);color:var(--peri-ink);font-weight:700;
     font-size:12.5px;display:flex;align-items:center;justify-content:center;flex:none;letter-spacing:-.02em}
-  .lead{display:flex;gap:12px;align-items:center;cursor:pointer;transition:background .1s}
-  .lead:hover{background:var(--peri-soft)}
+  .lead{display:flex;gap:12px;align-items:center;cursor:pointer;position:relative;
+    transition:background .15s,transform .15s,box-shadow .15s;
+    animation:cardIn .4s cubic-bezier(.22,1,.36,1) both}
+  .lead:hover{background:var(--peri-soft);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .lead.removing{animation:cardOut .18s ease forwards}
   .lead .org{font-weight:600;font-size:14px;letter-spacing:-.005em}
   .lead .sub{font-size:11.5px;color:var(--mut)}
+  .quick-del{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:99px;border:1px solid var(--line);
+    background:#fff;color:var(--mut-soft);font-size:11px;line-height:1;cursor:pointer;opacity:0;
+    transform:scale(.7);transition:opacity .12s,transform .12s,background .12s,color .12s;box-shadow:var(--shadow-sm)}
+  .lead:hover .quick-del{opacity:1;transform:scale(1)}
+  .quick-del:hover{background:var(--critical);color:#fff;border-color:var(--critical)}
   .val{font-family:var(--mono);font-size:12.5px;color:var(--navy2);min-width:82px;text-align:right;font-weight:600}
   input,select,textarea{font:inherit;font-size:13px;border:1px solid #ccd1e6;border-radius:9px;padding:8px 10px;
     background:#fff;width:100%;transition:border-color .12s,box-shadow .12s}
@@ -84,8 +92,9 @@
   label{font-size:11px;color:var(--mut);display:block;font-weight:500}
   label>*{margin-top:4px}
   .drawer-bg{position:fixed;inset:0;background:rgba(0,10,26,.5);display:flex;justify-content:flex-end;z-index:40;
-    backdrop-filter:blur(1px)}
-  .drawer{background:#fff;width:min(640px,100%);height:100%;overflow-y:auto;padding:24px;box-shadow:var(--shadow-lg)}
+    backdrop-filter:blur(1px);animation:bgIn .2s ease both}
+  .drawer{background:#fff;width:min(640px,100%);height:100%;overflow-y:auto;padding:24px;box-shadow:var(--shadow-lg);
+    animation:drawerIn .32s cubic-bezier(.22,1,.36,1) both}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:600px){.grid2{grid-template-columns:1fr}}
   .mono{font-family:var(--mono)}
@@ -97,8 +106,9 @@
   .msg{border-left:3px solid #ccc;padding:6px 10px;margin:6px 0;font-size:12.5px;background:var(--paper);border-radius:0 8px 8px 0}
   .msg.in{border-color:var(--peri)}
   .msg.out{border-color:#b8bfd6}
-  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:13px;
-    padding:10px 20px;border-radius:99px;z-index:60;box-shadow:var(--shadow-lg)}
+  .toast{position:fixed;bottom:18px;left:50%;background:var(--navy);color:#fff;font-size:13px;
+    padding:10px 20px;border-radius:99px;z-index:60;box-shadow:var(--shadow-lg);
+    animation:toastIn .38s cubic-bezier(.34,1.56,.64,1) both,toastOut .25s ease forwards 2.1s}
   .src-status{font-family:var(--mono);font-size:11.5px;color:var(--navy2);margin-top:6px;min-height:14px}
   .banner{background:var(--gold-soft);border:1px solid #f0d98a;border-radius:10px;padding:11px 15px;font-size:12.5px;
     margin-bottom:14px;color:var(--gold-ink)}
@@ -106,7 +116,23 @@
   .spin{display:inline-block;animation:sp 1s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
   .empty{border:1px dashed #ccd3ec;border-radius:14px;padding:32px;text-align:center;color:var(--mut);font-size:13px;
-    background:#fff}
+    background:#fff;animation:cardIn .3s ease both}
+  /* --- motion --- */
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+  @keyframes cardIn{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes cardOut{to{opacity:0;transform:translateX(24px) scale(.96)}}
+  @keyframes bgIn{from{opacity:0}to{opacity:1}}
+  @keyframes drawerIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,14px) scale(.94)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  @keyframes toastOut{to{opacity:0;transform:translate(-50%,8px) scale(.96)}}
+  @keyframes softPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,222,89,.55)}50%{box-shadow:0 0 0 5px rgba(255,222,89,0)}}
+  @keyframes popIn{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+  @keyframes tabIn{from{transform:translateY(-2px);opacity:.5}to{transform:translateY(0);opacity:1}}
+  @keyframes confettiFall{from{transform:translateY(-10px) rotate(0deg);opacity:1}to{transform:translateY(90px) rotate(280deg);opacity:0}}
+  .s-hi{animation:softPulse 2.4s ease-in-out infinite}
+  nav button.on{animation:tabIn .18s ease both}
+  .stat b{animation:popIn .35s cubic-bezier(.22,1,.36,1) both}
+  .confetti-piece{position:fixed;top:40%;font-size:18px;pointer-events:none;z-index:80;animation:confettiFall 900ms ease-in forwards}
   /* --- pipeline management additions --- */
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
   .stagebar{display:flex;flex-direction:column;gap:5px}
@@ -154,8 +180,18 @@
     <div class="toolbar">
       <button class="btn" onclick="openAdd()">+ Add lead</button>
       <input class="grow" id="search" placeholder="Search org, contact, country…" oninput="renderLeads()">
+      <select id="serviceFilter" onchange="renderLeads()">
+        <option value="All">All services</option>
+      </select>
+      <select id="timeFilter" onchange="renderLeads()">
+        <option value="all">Any time</option>
+        <option value="7">Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
       <span class="sortbar"><select id="sortBy" onchange="renderLeads()">
         <option value="score">Sort: Fit score</option>
+        <option value="alignment">Sort: Alignment %</option>
         <option value="value">Sort: Tentative value</option>
         <option value="newest">Sort: Newest</option>
         <option value="followup">Sort: Follow-up date</option>
@@ -179,6 +215,13 @@
       <p class="muted" style="margin:6px 0 10px">Runs all configured sources back-to-back, then a Gmail sync.</p>
       <button class="btn" id="runAllBtn" onclick="runAll()">▶ Run all sources</button>
       <div class="src-status" id="runAllStatus"></div>
+    </div>
+    <div class="card"><b style="font-size:14px">🧹 Pipeline hygiene</b>
+      <p class="muted" style="margin:6px 0 10px">Every scheduled run already does this automatically — use this to
+        clean up on demand. Leads whose application deadline has passed can no longer be acted on, so they're
+        removed rather than left cluttering the pipeline (Won/Lost leads are never touched).</p>
+      <button class="ghost" id="cleanupBtn" onclick="cleanupExpired()">Remove expired leads now</button>
+      <div class="src-status" id="cleanupStatus"></div>
     </div>
   </section>
 
@@ -343,6 +386,21 @@ function deadlineBadge(l){
   else{label=`${days}d to apply`;bg="var(--peri-soft)";fg="var(--peri-ink)"}
   return `<span class="pill" style="background:${bg};color:${fg}" title="Application deadline: ${esc(l.deadline)}">⏱ ${label}</span>`;
 }
+function alignmentBadge(l){
+  const pct=l.alignment_pct;
+  if(pct===undefined||pct===null)return "";
+  const bg=pct>=75?"var(--gold)":pct>=50?"var(--peri-soft)":"#eef0f6";
+  const fg=pct>=75?"var(--gold-ink)":pct>=50?"var(--peri-ink)":"var(--mut-soft)";
+  return `<span class="pill align-pill" style="background:${bg};color:${fg}"
+    title="How closely this lead's text matches the service it's classified under">🎯 ${pct}% aligned</span>`;
+}
+async function quickDelete(id,btn){
+  if(!confirm("Delete this lead?"))return;
+  const card=btn&&btn.closest(".card.lead");
+  if(card){card.classList.add("removing");await new Promise(r=>setTimeout(r,180))}
+  await api("/api/leads/"+id,{method:"DELETE"});
+  toast("Lead deleted");loadLeads();
+}
 
 // ---------- tabs ----------
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -409,6 +467,7 @@ function sortLeads(list){
   const by=$("sortBy")?$("sortBy").value:"score";
   const arr=list.slice();
   if(by==="value")arr.sort((a,b)=>b.tentative_value-a.tentative_value);
+  else if(by==="alignment")arr.sort((a,b)=>(b.alignment_pct||0)-(a.alignment_pct||0));
   else if(by==="newest")arr.sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""));
   else if(by==="followup")arr.sort((a,b)=>(a.follow_up||"9999").localeCompare(b.follow_up||"9999"));
   else arr.sort((a,b)=>b.score-a.score);
@@ -417,20 +476,27 @@ function sortLeads(list){
 
 function renderLeads(){
   const q=($("search").value||"").toLowerCase();
+  const svcFilter=$("serviceFilter")?$("serviceFilter").value:"All";
+  const timeFilter=$("timeFilter")?$("timeFilter").value:"all";
+  const cutoff=timeFilter==="all"?null:(()=>{const d=new Date();d.setDate(d.getDate()-Number(timeFilter));return d.toISOString().slice(0,10)})();
   let list=leads.filter(l=>(stageFilter==="All"||l.stage===stageFilter))
+    .filter(l=>svcFilter==="All"||l.segment===svcFilter)
+    .filter(l=>!cutoff||(l.created_at||"").slice(0,10)>=cutoff)
     .filter(l=>!q||[l.org,l.contact,l.country,l.segment,l.source].join(" ").toLowerCase().includes(q));
   list=sortLeads(list);
   if(!leads.length){$("leadList").innerHTML=
     `<div class="empty">Pipeline is empty. Head to <b>Sources</b> and hit <b>Run all sources</b> — leads arrive pre-scored and valued.</div>`;return}
-  $("leadList").innerHTML=list.map(l=>{
+  $("leadList").innerHTML=list.map((l,i)=>{
     const over=l.follow_up&&l.follow_up<=today()&&!["Won","Lost"].includes(l.stage);
-    return `<div class="card lead" onclick="openLead('${l.id}')">
+    return `<div class="card lead" style="animation-delay:${Math.min(i,10)*28}ms" onclick="openLead('${l.id}')">
+      <button class="quick-del" title="Delete lead" onclick="event.stopPropagation();quickDelete('${l.id}',this)">✕</button>
       <div class="score ${scoreCls(l.score)}" title="${esc(l.value_note||'Fit score')}">${l.score}</div>
       ${avatar(l.org)}
       <div class="grow"><div class="org">${esc(l.org)}</div>
         <div class="sub">${esc(l.contact||"")}${l.role?" · "+esc(l.role):""}${l.country?" · "+esc(l.country):""}
         ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}
         ${l.email?" · ✉":""}${waLink(l.phone)?" · 💬":""}</div></div>
+      ${alignmentBadge(l)}
       ${l.matched_service?`<span class="pill" style="background:var(--accsoft);color:var(--acc-ink)" title="${esc(l.match_reasoning||"")}">🤖 ${esc(l.matched_service)} · ${l.match_score}</span>`:""}
       ${deadlineBadge(l)}
       ${over?`<span class="pill" style="background:var(--criticalsoft);color:var(--critical)">follow up</span>`:""}
@@ -450,6 +516,7 @@ function openAdd(){
       <label>Phone (WhatsApp-capable if possible)<input id="f_phone" placeholder="+260 9…"></label>
       <label>Country<input id="f_country"></label>
       <label>Segment<select id="f_segment">${SEGMENTS.map(s=>`<option>${s}</option>`).join("")}</select></label>
+      <label>Application deadline (optional)<input type="date" id="f_deadline"></label>
       <label style="grid-column:1/-1">Trigger (why now?)<input id="f_trigger" placeholder="tender, new grant, job posting…"></label>
       <label style="grid-column:1/-1">Notes<textarea id="f_notes" rows="2"></textarea></label>
     </div>
@@ -460,10 +527,12 @@ function openAdd(){
 }
 async function saveNewLead(){
   const org=$("f_org").value.trim();if(!org)return toast("Organisation is required");
-  await api("/api/leads",{method:"POST",body:JSON.stringify({org,
+  const r=await api("/api/leads",{method:"POST",body:JSON.stringify({org,
     contact:$("f_contact").value,role:$("f_role").value,email:$("f_email").value,
     phone:$("f_phone").value,country:$("f_country").value,segment:$("f_segment").value,
+    deadline:$("f_deadline").value,
     trigger:$("f_trigger").value,notes:$("f_notes").value})});
+  if(r.error)return toast(r.error);
   closeDrawer();toast("Lead added & scored");loadLeads();
 }
 
@@ -488,9 +557,10 @@ async function openLead(id){
     <div class="row" style="margin:8px 0 6px">
       <div class="score ${scoreCls(l.score)}">${l.score}</div>
       <span class="mono muted">${money(l.tentative_value)} tentative</span>
-      ${pill(l.stage)}<span class="muted">${esc(l.source||"")}</span>
+      ${pill(l.stage)}${alignmentBadge(l)}<span class="muted">${esc(l.source||"")}</span>
       ${l.url?`<a href="${esc(l.url)}" target="_blank" style="font-size:12px">source link ↗</a>`:""}
     </div>
+    <div class="muted" style="font-size:11.5px;margin-bottom:4px">Segment: <b style="color:var(--navy)">${esc(l.segment||"")}</b></div>
     ${scoreWorking(l)}
     ${l.matched_service?`<div class="card" style="background:var(--accsoft);margin-bottom:10px;margin-top:10px">
       <b style="font-size:12.5px">🤖 Matched service: ${esc(l.matched_service)} (${l.match_score})</b>
@@ -583,7 +653,20 @@ async function openLead(id){
   `);
 }
 async function patchLead(id,patch,log){await api("/api/leads/"+id,{method:"PATCH",
-  body:JSON.stringify({patch,log})});loadLeads()}
+  body:JSON.stringify({patch,log})});if(patch.stage==="Won")celebrate();loadLeads()}
+function celebrate(){
+  const emojis=["🎉","✨","🏆","💛","🎊"];
+  for(let i=0;i<14;i++){
+    const s=document.createElement("span");
+    s.className="confetti-piece";s.textContent=emojis[i%emojis.length];
+    s.style.left=(10+Math.random()*80)+"vw";
+    s.style.animationDelay=(Math.random()*180)+"ms";
+    s.style.fontSize=(14+Math.random()*14)+"px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1200);
+  }
+  toast("🏆 Marked as Won — nice work!");
+}
 
 function fill(body,l){
   const fn=(l.contact||"").trim().split(/\s+/)[0]||"[name]";
@@ -623,7 +706,8 @@ async function runSource(key,btn){
   const r=await api(`/api/sources/${key}/run`,{method:"POST"});
   btn.disabled=false;
   st.textContent=r.error?("✗ "+r.error):
-    `✓ ${r.added} new leads added (fetched ${r.fetched}, ${r.duplicates_skipped} already known)`;
+    `✓ ${r.added} new leads added (fetched ${r.fetched}, ${r.duplicates_skipped} already known` +
+    (r.expired_skipped?`, ${r.expired_skipped} past deadline`:"") + `)`;
   if(!r.error){loadLeads();if(r.added)toast(r.added+" new leads scored into pipeline")}
   return r;
 }
@@ -637,6 +721,13 @@ async function runAll(){
   await api("/api/gmail/sync",{method:"POST"}).catch(()=>{});
   $("runAllStatus").textContent=`Done — ${added} new leads in the pipeline.`;
   btn.disabled=false;loadLeads();loadTodos();
+}
+async function cleanupExpired(){
+  const btn=$("cleanupBtn");btn.disabled=true;$("cleanupStatus").innerHTML=`<span class="spin">◌</span> checking…`;
+  const r=await api("/api/leads/cleanup-expired",{method:"POST"});
+  btn.disabled=false;
+  $("cleanupStatus").textContent=`✓ Removed ${r.removed} lead${r.removed===1?"":"s"} past their application deadline.`;
+  if(r.removed)loadLeads();
 }
 
 // ---------- todos ----------
@@ -753,6 +844,8 @@ function drawer(html){$("drawerHost").innerHTML=
 function closeDrawer(){$("drawerHost").innerHTML=""}
 
 // ---------- boot ----------
+$("serviceFilter").insertAdjacentHTML("beforeend",
+  SEGMENTS.map(s=>`<option value="${s}">${s}</option>`).join(""));
 chips();loadLeads();loadTemplates();loadSources();loadSettings();loadTodos();
 setInterval(loadStats,60000);
 </script>

@@ -36,10 +36,22 @@ PRIORITY_COUNTRIES = [
     "ethiopia", "ghana", "nigeria",
 ]
 
+
+# Universal "someone is actively buying, right now" signals — deliberately
+# service-agnostic (topical fit is already scored separately via SERVICES
+# keywords), so these apply the same demand-signal boost whether the lead is
+# a software tender, a call-center RFP, or an insurance-platform bid.
 HOT_KEYWORDS = [
-    "baseline", "endline", "consultan", "rfp", "request for proposal", "tender",
-    "evaluation", "data collection", "dashboard", "m&e", "survey firm",
+    "request for proposal", "request for quotation", "invitation to bid",
+    "expression of interest", "call for proposals", "consultan", "rfp", "rfq",
+    "tender", "solicitation", "appointment of a service provider",
+    "appointment of a consultant", "procurement of",
 ]
+
+# Hits needed against the winning service's keyword list to count as "fully
+# aligned" (100%) — calibrated against short raw-lead text (titles/summaries
+# rarely contain more than a handful of on-topic phrases).
+ALIGNMENT_CAP = 4
 
 
 NAME_TO_KEY = {v["name"]: k for k, v in SERVICES.items()}
@@ -130,15 +142,18 @@ def score_lead(raw: dict, settings: dict | None = None) -> dict:
 
     lo, hi = SERVICES[seg_key]["value_range"]
     tentative = int(lo + (hi - lo) * (score / 100))
+    alignment_pct = round(min(hits, ALIGNMENT_CAP) / ALIGNMENT_CAP * 100)
 
     lead = dict(raw)
     lead["segment"] = segment
     lead["score"] = score
+    lead["alignment_pct"] = alignment_pct
     lead["tentative_value"] = tentative
     lead["score_breakdown"] = json.dumps(breakdown)
     lead["value_note"] = (
         f"{segment} deals typically run ${lo:,}-${hi:,}; a fit score of {score}/100 "
-        f"places this one at ${tentative:,}."
+        f"places this one at ${tentative:,}. Alignment with what we offer: {alignment_pct}% "
+        f"({hits} matching signal{'s' if hits != 1 else ''} for this service)."
     )
     lead.setdefault("stage", "New")
     return lead
