@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS leads (
     deadline TEXT DEFAULT '',
     how_to_apply TEXT DEFAULT '',
     alignment_pct INTEGER DEFAULT 0,
+    snoozed_until TEXT DEFAULT '',
     created_at TEXT,
     updated_at TEXT
 );
@@ -56,7 +57,8 @@ CREATE TABLE IF NOT EXISTS activities (
 CREATE TABLE IF NOT EXISTS templates (
     id TEXT PRIMARY KEY,
     name TEXT,
-    body TEXT
+    body TEXT,
+    segment TEXT DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS todos (
     id TEXT PRIMARY KEY,
@@ -158,6 +160,8 @@ def init() -> None:
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS how_to_apply TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''")
     cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS alignment_pct INTEGER DEFAULT 0")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS snoozed_until TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE templates ADD COLUMN IF NOT EXISTS segment TEXT DEFAULT ''")
     cur.execute("SELECT COUNT(*) AS c FROM templates")
     if cur.fetchone()["c"] == 0:
         for name, body in DEFAULT_TEMPLATES:
@@ -203,7 +207,8 @@ def get_lead(lead_id):
 LEAD_FIELDS = ["org", "contact", "role", "email", "phone", "country", "segment", "source",
                "stage", "score", "tentative_value", "trigger", "notes", "url", "follow_up",
                "matched_service", "match_score", "match_reasoning",
-               "score_breakdown", "value_note", "deadline", "how_to_apply", "alignment_pct"]
+               "score_breakdown", "value_note", "deadline", "how_to_apply", "alignment_pct",
+               "snoozed_until"]
 
 
 def is_past_deadline(deadline: str) -> bool:
@@ -302,6 +307,164 @@ def delete_expired_leads() -> int:
     return len(ids)
 
 
+def list_all_activities(limit: int = 300) -> list[dict]:
+    """Global audit trail across every lead, most recent first."""
+    con = connect()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT a.id, a.lead_id, a.date, a.text, l.org AS lead_org
+        FROM activities a LEFT JOIN leads l ON l.id = a.lead_id
+        ORDER BY a.date DESC LIMIT %s
+    """, (limit,))
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    con.close()
+    return rows
+
+
+def bulk_update_stage(ids: list[str], stage: str) -> int:
+    if not ids:
+        return 0
+    con = connect()
+    cur = con.cursor()
+    cur.execute(f"UPDATE leads SET stage=%s, updated_at=%s WHERE id IN ({','.join(['%s']*len(ids))})",
+                [stage, now()] + ids)
+    for lid in ids:
+        cur.execute("INSERT INTO activities (id, lead_id, date, text) VALUES (%s,%s,%s,%s)",
+                    (uid(), lid, today(), f"Stage → {stage} (bulk action)"))
+    con.commit()
+    cur.close()
+    con.close()
+    return len(ids)
+
+
+def bulk_delete(ids: list[str]) -> int:
+    if not ids:
+        return 0
+    con = connect()
+    cur = con.cursor()
+    ph = ",".join(["%s"] * len(ids))
+    for table in ("activities", "emails", "todos"):
+        cur.execute(f"DELETE FROM {table} WHERE lead_id IN ({ph})", ids)
+    cur.execute(f"DELETE FROM leads WHERE id IN ({ph})", ids)
+    con.commit()
+    cur.close()
+    con.close()
+    return len(ids)
+
+
+def find_duplicate_groups() -> list[list[dict]]:
+    """Group leads that look like the same organisation: same normalized org
+    name, or same non-empty email. Returns only groups with 2+ members, most
+    recently-touched group first."""
+    con = connect()
+    cur = con.cursor()
+    cur.execute("SELECT * FROM leads ORDER BY created_at DESC")
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    con.close()
+
+    by_org: dict[str, list[dict]] = {}
+    by_email: dict[str, list[dict]] = {}
+    for r in rows:
+        key = (r.get("org") or "").strip().lower()
+        if key:
+            by_org.setdefault(key, []).append(r)
+        email = (r.get("email") or "").strip().lower()
+        if email:
+            by_email.setdefault(email, []).append(r)
+
+    groups, seen_ids = [], set()
+    for bucket in (by_email, by_org):
+        for members in bucket.values():
+            if len(members) < 2:
+                continue
+            ids = tuple(sorted(m["id"] for m in members))
+            if ids in seen_ids:
+                continue
+            seen_ids.add(ids)
+            groups.append(members)
+    return groups
+
+
+def merge_leads(keep_id: str, remove_id: str) -> bool:
+    """Fold remove_id's activities/emails/todos into keep_id, then delete remove_id."""
+    if keep_id == remove_id:
+        return False
+    con = connect()
+    cur = con.cursor()
+    cur.execute("SELECT 1 FROM leads WHERE id=%s", (keep_id,))
+    if not cur.fetchone():
+        cur.close()
+        con.close()
+        return False
+    for table in ("activities", "emails", "todos"):
+        cur.execute(f"UPDATE {table} SET lead_id=%s WHERE lead_id=%s", (keep_id, remove_id))
+    cur.execute("INSERT INTO activities (id, lead_id, date, text) VALUES (%s,%s,%s,%s)",
+                (uid(), keep_id, today(), f"Merged duplicate lead {remove_id} into this one"))
+    cur.execute("DELETE FROM leads WHERE id=%s", (remove_id,))
+    con.commit()
+    cur.close()
+    con.close()
+    return True
+
+
+def stats_by_source() -> list[dict]:
+    con = connect()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT source,
+               COUNT(*) AS total,
+               SUM(CASE WHEN stage='Won' THEN 1 ELSE 0 END) AS won,
+               SUM(CASE WHEN stage='Won' THEN tentative_value ELSE 0 END) AS won_value,
+               SUM(CASE WHEN stage NOT IN ('Won','Lost') THEN 1 ELSE 0 END) AS active
+        FROM leads GROUP BY source ORDER BY won_value DESC, total DESC
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    con.close()
+    return rows
+
+
+def stats_by_segment() -> list[dict]:
+    con = connect()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT segment,
+               COUNT(*) AS total,
+               SUM(CASE WHEN stage NOT IN ('Won','Lost') THEN 1 ELSE 0 END) AS active,
+               SUM(CASE WHEN stage NOT IN ('Won','Lost') THEN tentative_value ELSE 0 END) AS active_value,
+               SUM(CASE WHEN stage='Won' THEN 1 ELSE 0 END) AS won,
+               SUM(CASE WHEN stage='Won' THEN tentative_value ELSE 0 END) AS won_value,
+               AVG(score) AS avg_score, AVG(alignment_pct) AS avg_alignment
+        FROM leads GROUP BY segment ORDER BY active_value DESC
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    con.close()
+    return rows
+
+
+def stats_trend(days: int = 30) -> list[dict]:
+    """Average fit score & alignment of leads *created* on each of the last N
+    days — an approximation of "is lead quality improving", since we don't
+    keep historical score snapshots, only the score a lead was given at
+    creation time."""
+    con = connect()
+    cur = con.cursor()
+    since = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
+    cur.execute("""
+        SELECT substr(created_at,1,10) AS day,
+               COUNT(*) AS n, AVG(score) AS avg_score, AVG(alignment_pct) AS avg_alignment
+        FROM leads WHERE substr(created_at,1,10) >= %s
+        GROUP BY day ORDER BY day
+    """, (since,))
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    con.close()
+    return rows
+
+
 def find_lead_by_email(email: str):
     con = connect()
     cur = con.cursor()
@@ -360,14 +523,15 @@ def list_templates():
     return rows
 
 
-def save_template(tid, name, body):
+def save_template(tid, name, body, segment=""):
     con = connect()
     cur = con.cursor()
     if tid:
-        cur.execute("UPDATE templates SET name=%s, body=%s WHERE id=%s", (name, body, tid))
+        cur.execute("UPDATE templates SET name=%s, body=%s, segment=%s WHERE id=%s", (name, body, segment, tid))
     else:
         tid = uid()
-        cur.execute("INSERT INTO templates (id, name, body) VALUES (%s,%s,%s)", (tid, name, body))
+        cur.execute("INSERT INTO templates (id, name, body, segment) VALUES (%s,%s,%s,%s)",
+                    (tid, name, body, segment))
     con.commit()
     cur.close()
     con.close()

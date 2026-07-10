@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Raid Alpha</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#00214d">
+<link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Raid Alpha">
 <style>
   :root{
     /* brand — navy / gold / periwinkle */
@@ -61,6 +68,7 @@
   button.ghost{background:#fff;color:var(--navy);border:1px solid #ccd3ec;border-radius:9px;padding:8px 14px;font-size:12.5px;
     cursor:pointer;transition:background .12s,border-color .12s;font-weight:500}
   button.ghost:hover{background:var(--peri-soft);border-color:var(--peri)}
+  button.ghost.on{background:var(--navy);color:#fff;border-color:var(--navy)}
   select.ghost{width:auto}
   .chip{border:1px solid #ccd3ec;background:#fff;border-radius:99px;padding:5px 12px;font-size:11.5px;cursor:pointer;
     color:var(--mut);font-weight:500;transition:all .12s}
@@ -155,6 +163,65 @@
   details.why summary::before{content:"▸";font-size:9px;transition:transform .12s}
   details.why[open] summary::before{transform:rotate(90deg)}
   .sortbar select{width:auto;min-width:150px}
+  /* --- view switcher --- */
+  .viewswitch{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px}
+  .viewswitch button{background:none;border:none;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--mut);
+    border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
+  .viewswitch button.on{background:var(--navy);color:#fff}
+  /* --- bulk select --- */
+  .lead.bulk-mode{cursor:default}
+  .lead .bulk-check{display:none;width:18px;height:18px;flex:none;accent-color:var(--navy)}
+  .bulk-mode-on .lead .bulk-check{display:block}
+  .bulk-mode-on .lead .quick-del{display:none}
+  .lead.bulk-selected{background:var(--peri-soft);box-shadow:inset 0 0 0 2px var(--peri)}
+  .bulk-bar{display:flex;align-items:center;gap:10px;background:var(--navy);color:#fff;border-radius:12px;
+    padding:10px 14px;margin-bottom:12px;animation:cardIn .25s ease both;flex-wrap:wrap}
+  .bulk-bar b{font-size:12.5px}
+  .bulk-bar select,.bulk-bar button{width:auto}
+  /* --- kanban board --- */
+  .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start}
+  .board-col{background:var(--paper);border:1px solid var(--line);border-radius:14px;min-width:230px;max-width:230px;
+    flex:none;display:flex;flex-direction:column;max-height:calc(100vh - 320px)}
+  .board-col-head{padding:10px 12px;font-size:12px;font-weight:700;color:var(--navy);display:flex;
+    justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .board-col-body{padding:8px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;min-height:60px}
+  .board-col-body.drag-over{background:var(--peri-soft)}
+  .board-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:grab;
+    box-shadow:var(--shadow-sm);animation:cardIn .3s ease both;transition:box-shadow .12s,transform .12s}
+  .board-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+  .board-card.dragging{opacity:.4}
+  .board-card .org{font-weight:600;font-size:12.5px}
+  .board-card .meta{font-size:10.5px;color:var(--mut);margin-top:3px}
+  .board-card .row{margin-top:6px;gap:6px}
+  /* --- calendar --- */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal-dow{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);text-align:center;padding-bottom:4px}
+  .cal-cell{background:#fff;border:1px solid var(--line-soft);border-radius:8px;min-height:74px;padding:5px;
+    font-size:10.5px;position:relative}
+  .cal-cell.other-month{background:var(--paper);color:var(--mut-soft)}
+  .cal-cell.today{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  .cal-cell .daynum{font-weight:700;color:var(--navy);font-size:11px}
+  .cal-item{background:var(--peri-soft);color:var(--peri-ink);border-radius:5px;padding:2px 4px;margin-top:3px;
+    font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .cal-item.urgent{background:var(--gold);color:var(--gold-ink)}
+  /* --- insights --- */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .mini-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .mini-stat b{display:block;font-size:18px;color:var(--navy)}
+  .mini-stat span{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+  .bar-row{display:grid;grid-template-columns:170px 1fr 70px;gap:8px;align-items:center;font-size:11.5px;margin:5px 0}
+  .bar-row .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut);font-weight:500}
+  .bar-track{height:12px;background:var(--line-soft);border-radius:5px;overflow:hidden}
+  .bar-fill{height:100%;background:var(--peri);border-radius:5px;transition:width .4s ease}
+  .bar-row .num{font-family:var(--mono);text-align:right;color:var(--navy);font-weight:700}
+  /* --- activity feed --- */
+  .activity-row{display:flex;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line-soft);font-size:12px}
+  .activity-row .date{font-family:var(--mono);color:var(--mut-soft);min-width:130px;font-size:10.5px}
+  .activity-row .who{font-weight:600;color:var(--navy)}
+  /* --- duplicates --- */
+  .dup-group{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+  .dup-item{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
+  .dup-item:hover{background:var(--peri-soft)}
 </style>
 </head>
 <body>
@@ -166,6 +233,7 @@
 
 <nav><div class="wrap">
   <button data-tab="pipeline" class="on">Pipeline</button>
+  <button data-tab="insights">Insights</button>
   <button data-tab="sources">Sources</button>
   <button data-tab="todos">To-dos <span id="todoBadge"></span></button>
   <button data-tab="templates">Templates</button>
@@ -179,6 +247,16 @@
     <div class="card" id="stageOverview"></div>
     <div class="toolbar">
       <button class="btn" onclick="openAdd()">+ Add lead</button>
+      <div class="viewswitch" id="viewSwitch">
+        <button data-view="list" class="on" onclick="setView('list')">☰ List</button>
+        <button data-view="board" onclick="setView('board')">▤ Board</button>
+        <button data-view="calendar" onclick="setView('calendar')">▦ Calendar</button>
+      </div>
+      <button class="ghost" id="bulkToggleBtn" onclick="toggleBulkMode()">☑ Select</button>
+      <button class="ghost" onclick="exportCsv()">⬇ Export CSV</button>
+      <button class="ghost" onclick="openDuplicates()">⧉ Duplicates</button>
+    </div>
+    <div class="toolbar">
       <input class="grow" id="search" placeholder="Search org, contact, country…" oninput="renderLeads()">
       <select id="serviceFilter" onchange="renderLeads()">
         <option value="All">All services</option>
@@ -189,6 +267,8 @@
         <option value="30">Last 30 days</option>
         <option value="90">Last 90 days</option>
       </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);font-weight:500;width:auto">
+        <input type="checkbox" id="showSnoozed" onchange="renderLeads()" style="width:auto">Show snoozed</label>
       <span class="sortbar"><select id="sortBy" onchange="renderLeads()">
         <option value="score">Sort: Fit score</option>
         <option value="alignment">Sort: Alignment %</option>
@@ -196,9 +276,43 @@
         <option value="newest">Sort: Newest</option>
         <option value="followup">Sort: Follow-up date</option>
       </select></span>
+      <select id="presetSelect" onchange="applyPreset(this.value)">
+        <option value="">Saved filters…</option>
+      </select>
+      <button class="ghost" onclick="savePreset()">💾 Save filter</button>
     </div>
     <div class="row" id="stageChips" style="margin-bottom:12px"></div>
+    <div id="bulkBar" class="bulk-bar" hidden>
+      <b><span id="bulkCount">0</span> selected</b>
+      <select id="bulkStageSelect"><option value="">Set stage…</option></select>
+      <button class="ghost" onclick="applyBulkStage()">Apply</button>
+      <button class="ghost" onclick="bulkDeleteSelected()">🗑 Delete selected</button>
+      <button class="ghost" onclick="toggleBulkMode()">Done</button>
+    </div>
     <div id="leadList"></div>
+    <div id="boardView" class="board" hidden></div>
+    <div id="calendarView" hidden></div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section id="tab-insights" hidden>
+    <div class="card">
+      <h2>Pipeline by service</h2>
+      <div id="segStats"></div>
+    </div>
+    <div class="card">
+      <h2>Source ROI — which pullers actually convert</h2>
+      <div id="sourceStats"></div>
+    </div>
+    <div class="card">
+      <h2>Lead quality trend (last 30 days)</h2>
+      <p class="muted" style="margin:0 0 8px">Average fit score & alignment of leads created each day.</p>
+      <div id="trendChart"></div>
+    </div>
+    <div class="card">
+      <h2>Activity feed</h2>
+      <div id="activityFeed"></div>
+    </div>
   </section>
 
   <!-- SOURCES -->
@@ -283,6 +397,40 @@
         the README.</p>
     </div>
     <div class="card">
+      <h2>WhatsApp Business API</h2>
+      <p class="muted" id="whatsappStatus">Checking…</p>
+      <div class="grid2">
+        <label>WhatsApp Phone Number ID<input id="set_whatsapp_phone_id"></label>
+        <label>WhatsApp access token<input id="set_whatsapp_token" type="password"></label>
+      </div>
+      <p class="muted" style="margin-top:8px">One-time setup: developers.facebook.com → create a Meta App → add the
+        "WhatsApp" product → API Setup gives you the Phone Number ID; generate a permanent token under
+        Business Settings → System Users. Full steps and the 24-hour messaging-window policy are in the README.</p>
+    </div>
+    <div class="card">
+      <h2>Daily digest (Slack / email)</h2>
+      <div class="grid2">
+        <label>Enable daily digest
+          <select id="set_digest_enabled"><option value="false">Off</option><option value="true">On</option></select></label>
+        <label>Send via
+          <select id="set_digest_channel"><option value="email">Email</option><option value="slack">Slack</option><option value="both">Both</option></select></label>
+        <label>Digest recipient email<input id="set_digest_email" placeholder="you@example.com"></label>
+        <label>Slack Incoming Webhook URL<input id="set_slack_webhook_url" placeholder="https://hooks.slack.com/services/…"></label>
+      </div>
+      <p class="muted" style="margin-top:8px">Sent automatically once a day as part of the scheduled cron run. Create a
+        Slack webhook at api.slack.com/apps → your app → Incoming Webhooks.</p>
+      <button class="ghost" style="margin-top:8px" onclick="sendDigestNow()">Send a test digest now</button>
+      <div class="src-status" id="digestStatus"></div>
+    </div>
+    <div class="card">
+      <h2>🔖 Capture bookmarklet</h2>
+      <p class="muted" style="margin:0 0 10px">Drag this button to your browser's bookmarks bar. On any page, click it
+        to instantly add that page as a manual lead (title + URL pre-filled) — useful for capturing a tender, job
+        posting or company page you spot while browsing.</p>
+      <a id="bookmarkletLink" class="btn" style="text-decoration:none;display:inline-block" href="#"
+        onclick="return false" draggable="true">+ Add to Raid Alpha</a>
+    </div>
+    <div class="card">
       <h2>Which services does Neural Cloud offer?</h2>
       <p class="muted" style="margin:0 0 10px">Every pulled lead is classified into one of these
         12 service lines and valued accordingly. Untick any you're not taking on right now —
@@ -356,6 +504,7 @@ const SERVICE_CATALOG=[
 ];
 const SEGMENTS=SERVICE_CATALOG.map(s=>s.name);
 let leads=[],templates=[],settings={},stageFilter="All";
+let currentView="list",bulkMode=false,bulkSelected=new Set();
 const $=id=>document.getElementById(id);
 const api=(url,opt)=>fetch(url,opt?Object.assign({headers:{'Content-Type':'application/json'}},opt):undefined).then(r=>r.json());
 const money=n=>"$"+Number(n||0).toLocaleString();
@@ -410,6 +559,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   $("tab-"+b.dataset.tab).hidden=false;
   if(b.dataset.tab==="todos")loadTodos();
   if(b.dataset.tab==="services")loadServicesTab();
+  if(b.dataset.tab==="insights")loadInsights();
 });
 
 // ---------- stats ----------
@@ -474,25 +624,35 @@ function sortLeads(list){
   return arr;
 }
 
-function renderLeads(){
+function visibleLeads(){
   const q=($("search").value||"").toLowerCase();
   const svcFilter=$("serviceFilter")?$("serviceFilter").value:"All";
   const timeFilter=$("timeFilter")?$("timeFilter").value:"all";
+  const showSnoozed=$("showSnoozed")&&$("showSnoozed").checked;
   const cutoff=timeFilter==="all"?null:(()=>{const d=new Date();d.setDate(d.getDate()-Number(timeFilter));return d.toISOString().slice(0,10)})();
-  let list=leads.filter(l=>(stageFilter==="All"||l.stage===stageFilter))
+  return leads.filter(l=>(stageFilter==="All"||l.stage===stageFilter))
     .filter(l=>svcFilter==="All"||l.segment===svcFilter)
     .filter(l=>!cutoff||(l.created_at||"").slice(0,10)>=cutoff)
+    .filter(l=>showSnoozed||!(l.snoozed_until&&l.snoozed_until>today()))
     .filter(l=>!q||[l.org,l.contact,l.country,l.segment,l.source].join(" ").toLowerCase().includes(q));
-  list=sortLeads(list);
+}
+function renderLeads(){
+  if(currentView==="board")return renderBoard();
+  if(currentView==="calendar")return renderCalendar();
+  let list=sortLeads(visibleLeads());
   if(!leads.length){$("leadList").innerHTML=
     `<div class="empty">Pipeline is empty. Head to <b>Sources</b> and hit <b>Run all sources</b> — leads arrive pre-scored and valued.</div>`;return}
+  $("leadList").className=bulkMode?"bulk-mode-on":"";
   $("leadList").innerHTML=list.map((l,i)=>{
     const over=l.follow_up&&l.follow_up<=today()&&!["Won","Lost"].includes(l.stage);
-    return `<div class="card lead" style="animation-delay:${Math.min(i,10)*28}ms" onclick="openLead('${l.id}')">
+    const snoozed=l.snoozed_until&&l.snoozed_until>today();
+    return `<div class="card lead${bulkSelected.has(l.id)?' bulk-selected':''}" style="animation-delay:${Math.min(i,10)*28}ms"
+        onclick="${bulkMode?`toggleBulkSelect('${l.id}')`:`openLead('${l.id}')`}">
+      <input type="checkbox" class="bulk-check" onclick="event.stopPropagation();toggleBulkSelect('${l.id}')" ${bulkSelected.has(l.id)?"checked":""}>
       <button class="quick-del" title="Delete lead" onclick="event.stopPropagation();quickDelete('${l.id}',this)">✕</button>
       <div class="score ${scoreCls(l.score)}" title="${esc(l.value_note||'Fit score')}">${l.score}</div>
       ${avatar(l.org)}
-      <div class="grow"><div class="org">${esc(l.org)}</div>
+      <div class="grow"><div class="org">${esc(l.org)}${snoozed?' <span class="muted">💤 snoozed</span>':""}</div>
         <div class="sub">${esc(l.contact||"")}${l.role?" · "+esc(l.role):""}${l.country?" · "+esc(l.country):""}
         ${l.source?" · <span class='mono'>"+esc(l.source)+"</span>":""}
         ${l.email?" · ✉":""}${waLink(l.phone)?" · 💬":""}</div></div>
@@ -503,6 +663,236 @@ function renderLeads(){
       <div class="val" title="${esc(l.value_note||'Tentative value')}">${money(l.tentative_value)}</div>
       ${pill(l.stage)}</div>`}).join("")
     ||`<div class="empty">No leads match this filter.</div>`;
+}
+
+// ---------- view switcher ----------
+function setView(v){
+  currentView=v;
+  document.querySelectorAll("#viewSwitch button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
+  $("leadList").hidden=v!=="list";
+  $("boardView").hidden=v!=="board";
+  $("calendarView").hidden=v!=="calendar";
+  renderLeads();
+}
+
+// ---------- bulk select ----------
+function toggleBulkMode(){
+  bulkMode=!bulkMode;bulkSelected.clear();
+  $("bulkToggleBtn").classList.toggle("on",bulkMode);
+  $("bulkBar").hidden=!bulkMode;
+  if(bulkMode&&$("bulkStageSelect").options.length<=1){
+    $("bulkStageSelect").innerHTML=`<option value="">Set stage…</option>`+STAGES.map(s=>`<option value="${s}">${s}</option>`).join("");
+  }
+  $("bulkCount").textContent=bulkSelected.size;
+  renderLeads();
+}
+function toggleBulkSelect(id){
+  if(bulkSelected.has(id))bulkSelected.delete(id);else bulkSelected.add(id);
+  $("bulkCount").textContent=bulkSelected.size;
+  renderLeads();
+}
+async function applyBulkStage(){
+  const stage=$("bulkStageSelect").value;
+  if(!stage)return toast("Pick a stage first");
+  if(!bulkSelected.size)return toast("No leads selected");
+  const r=await api("/api/leads/bulk",{method:"POST",body:JSON.stringify({ids:[...bulkSelected],action:"stage",value:stage})});
+  toast(`✓ ${r.affected} lead${r.affected===1?"":"s"} moved to ${stage}`);
+  bulkSelected.clear();loadLeads();
+}
+async function bulkDeleteSelected(){
+  if(!bulkSelected.size)return toast("No leads selected");
+  if(!confirm(`Delete ${bulkSelected.size} lead(s)? This can't be undone.`))return;
+  const r=await api("/api/leads/bulk",{method:"POST",body:JSON.stringify({ids:[...bulkSelected],action:"delete"})});
+  toast(`🗑 ${r.affected} lead${r.affected===1?"":"s"} deleted`);
+  bulkSelected.clear();loadLeads();
+}
+
+// ---------- CSV export ----------
+function exportCsv(){window.location.href="/api/leads/export.csv"}
+
+// ---------- duplicates / merge ----------
+async function openDuplicates(){
+  const groups=await api("/api/leads/duplicates");
+  if(!groups.length){
+    drawer(`<h2>Possible duplicates</h2><div class="empty">No duplicate-looking leads found — same org name or same email, appearing more than once.</div>`);
+    return;
+  }
+  drawer(`<h2>Possible duplicates</h2>
+    <p class="muted" style="margin-top:-8px">Grouped by matching email or organisation name. Pick which one to keep — its
+      activity/email/to-do history absorbs the others, and the rest are deleted.</p>
+    ${groups.map((g,gi)=>`<div class="dup-group">
+      <b style="font-size:12.5px">${esc(g[0].org)}</b>
+      ${g.map(l=>`<div class="dup-item">
+        <input type="radio" name="dupkeep${gi}" value="${l.id}" ${l===g[0]?"checked":""}>
+        <div class="grow">
+          <div style="font-size:12.5px;font-weight:600">${esc(l.org)}</div>
+          <div class="muted" style="font-size:11px">${esc(l.email||"no email")} · ${esc(l.source||"")} ·
+            ${esc(l.stage)} · created ${esc((l.created_at||"").slice(0,10))}</div>
+        </div>
+      </div>`).join("")}
+      <button class="ghost" style="margin-top:6px" onclick="mergeGroup(${gi},[${g.map(l=>`'${l.id}'`).join(",")}])">Merge this group</button>
+    </div>`).join("")}
+  `);
+}
+async function mergeGroup(gi,ids){
+  const radios=document.getElementsByName("dupkeep"+gi);
+  let keepId=ids[0];
+  for(const r of radios)if(r.checked)keepId=r.value;
+  const removeIds=ids.filter(id=>id!==keepId);
+  for(const rid of removeIds){
+    await api("/api/leads/merge",{method:"POST",body:JSON.stringify({keep_id:keepId,remove_id:rid})});
+  }
+  toast("Merged — "+removeIds.length+" duplicate(s) folded in");
+  closeDrawer();loadLeads();
+}
+
+// ---------- kanban board ----------
+function renderBoard(){
+  const list=visibleLeads();
+  $("boardView").innerHTML=STAGES.map(stage=>{
+    const items=list.filter(l=>l.stage===stage);
+    const total=items.reduce((s,l)=>s+(l.tentative_value||0),0);
+    return `<div class="board-col">
+      <div class="board-col-head"><span>${stage} (${items.length})</span><span class="mono muted" style="font-size:10px">${money(total)}</span></div>
+      <div class="board-col-body" data-stage="${stage}" ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')" ondrop="onBoardDrop(event,'${stage}')">
+        ${items.map(l=>`<div class="board-card" draggable="true" data-id="${l.id}"
+            ondragstart="onBoardDragStart(event,'${l.id}')" ondragend="this.classList.remove('dragging')"
+            onclick="openLead('${l.id}')">
+          <div class="org">${esc(l.org)}</div>
+          <div class="meta">${esc(l.segment||"")}</div>
+          <div class="row">
+            <span class="score ${scoreCls(l.score)}" style="font-size:10.5px;padding:2px 6px;min-width:0">${l.score}</span>
+            <span class="val" style="min-width:0;font-size:11px">${money(l.tentative_value)}</span>
+          </div>
+        </div>`).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+let dragLeadId=null;
+function onBoardDragStart(ev,id){dragLeadId=id;ev.target.classList.add("dragging");ev.dataTransfer.effectAllowed="move"}
+async function onBoardDrop(ev,stage){
+  ev.preventDefault();ev.currentTarget.classList.remove("drag-over");
+  if(!dragLeadId)return;
+  await patchLead(dragLeadId,{stage},"Stage → "+stage+" (drag & drop)");
+  dragLeadId=null;
+}
+
+// ---------- calendar ----------
+let calMonth=new Date();
+function renderCalendar(){
+  const list=visibleLeads().filter(l=>l.deadline);
+  const y=calMonth.getFullYear(),m=calMonth.getMonth();
+  const first=new Date(y,m,1),startDow=first.getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const byDate={};
+  list.forEach(l=>{(byDate[l.deadline]=byDate[l.deadline]||[]).push(l)});
+  const dows=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  let cells=[];
+  for(let i=0;i<startDow;i++)cells.push(`<div class="cal-cell other-month"></div>`);
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const isToday=dateStr===today();
+    const items=byDate[dateStr]||[];
+    cells.push(`<div class="cal-cell${isToday?" today":""}"><div class="daynum">${d}</div>
+      ${items.map(l=>`<div class="cal-item${daysUntil(l.deadline)<=3?" urgent":""}" title="${esc(l.org)}"
+        onclick="openLead('${l.id}')">${esc(l.org)}</div>`).join("")}
+    </div>`);
+  }
+  $("calendarView").innerHTML=`
+    <div class="row" style="margin-bottom:10px">
+      <button class="ghost" onclick="calMonth.setMonth(calMonth.getMonth()-1);renderCalendar()">← Prev</button>
+      <b style="min-width:140px;text-align:center">${calMonth.toLocaleString(undefined,{month:"long",year:"numeric"})}</b>
+      <button class="ghost" onclick="calMonth.setMonth(calMonth.getMonth()+1);renderCalendar()">Next →</button>
+      <button class="ghost" onclick="calMonth=new Date();renderCalendar()">Today</button>
+    </div>
+    <div class="cal-grid">${dows.map(d=>`<div class="cal-dow">${d}</div>`).join("")}${cells.join("")}</div>
+    ${!list.length?'<p class="muted" style="margin-top:10px">No leads with an application deadline match the current filters.</p>':""}
+  `;
+}
+
+// ---------- filter presets ----------
+async function loadPresets(){
+  const presets=await api("/api/filter-presets");
+  $("presetSelect").innerHTML=`<option value="">Saved filters…</option>`+
+    presets.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
+  window._presets=presets;
+}
+async function savePreset(){
+  const name=prompt("Name this filter combination:");
+  if(!name)return;
+  const filters={service:$("serviceFilter").value,time:$("timeFilter").value,
+    sort:$("sortBy").value,stage:stageFilter,search:$("search").value};
+  await api("/api/filter-presets",{method:"POST",body:JSON.stringify({name,filters})});
+  toast("Filter preset saved");loadPresets();
+}
+function applyPreset(name){
+  if(!name)return;
+  const p=(window._presets||[]).find(p=>p.name===name);
+  if(!p)return;
+  const f=p.filters||{};
+  if(f.service!==undefined)$("serviceFilter").value=f.service;
+  if(f.time!==undefined)$("timeFilter").value=f.time;
+  if(f.sort!==undefined)$("sortBy").value=f.sort;
+  if(f.search!==undefined)$("search").value=f.search;
+  if(f.stage!==undefined){stageFilter=f.stage;chips()}
+  renderLeads();
+}
+
+// ---------- snooze ----------
+async function snoozeLead(id,currentSnooze){
+  const d=prompt("Snooze until (YYYY-MM-DD) — hidden from the pipeline until then:",currentSnooze||"");
+  if(d===null)return;
+  await patchLead(id,{snoozed_until:d.trim()},d.trim()?`Snoozed until ${d.trim()}`:"Un-snoozed");
+  toast(d.trim()?"Lead snoozed":"Lead un-snoozed");
+}
+
+// ---------- insights ----------
+async function loadInsights(){
+  const[bySeg,bySrc,trend,acts]=await Promise.all([
+    api("/api/stats/by-segment"),api("/api/stats/by-source"),api("/api/stats/trend?days=30"),api("/api/activities?limit=150")
+  ]);
+  const maxSegVal=Math.max(1,...bySeg.map(s=>Number(s.active_value)||0));
+  $("segStats").innerHTML=bySeg.filter(s=>s.segment).map(s=>`
+    <div class="bar-row"><span class="lbl" title="${esc(s.segment)}">${esc(s.segment)}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${Math.max(2,100*(s.active_value||0)/maxSegVal)}%"></span></span>
+      <span class="num">${money(s.active_value)}</span></div>
+    <div class="muted" style="font-size:10.5px;margin:-2px 0 8px">${s.total} lead${s.total==1?"":"s"} · ${s.won||0} won ·
+      avg score ${Math.round(s.avg_score||0)} · avg alignment ${Math.round(s.avg_alignment||0)}%</div>
+  `).join("")||`<div class="empty">No leads yet.</div>`;
+
+  const maxSrcVal=Math.max(1,...bySrc.map(s=>Number(s.won_value)||0),...bySrc.map(s=>Number(s.total)||0));
+  $("sourceStats").innerHTML=bySrc.map(s=>`
+    <div class="bar-row"><span class="lbl" title="${esc(s.source)}">${esc(s.source||"(unknown)")}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${Math.max(2,100*(s.total||0)/maxSrcVal)}%;background:var(--navy2)"></span></span>
+      <span class="num">${s.total}</span></div>
+    <div class="muted" style="font-size:10.5px;margin:-2px 0 8px">${s.won||0} won (${money(s.won_value)}) · ${s.active||0} still active ·
+      ${s.total?Math.round(100*(s.won||0)/s.total):0}% conversion</div>
+  `).join("")||`<div class="empty">No leads yet.</div>`;
+
+  if(trend.length<2){
+    $("trendChart").innerHTML=`<p class="muted">Not enough history yet — check back after a few more days of pulls.</p>`;
+  }else{
+    const w=760,h=90,n=trend.length;
+    const scorePts=trend.map((t,i)=>[i/(n-1)*w,h-(Number(t.avg_score)||0)/100*h]);
+    const alignPts=trend.map((t,i)=>[i/(n-1)*w,h-(Number(t.avg_alignment)||0)/100*h]);
+    const toLine=pts=>pts.map(p=>p.join(",")).join(" ");
+    $("trendChart").innerHTML=`
+      <svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="overflow:visible">
+        <polyline points="${toLine(scorePts)}" fill="none" stroke="var(--navy)" stroke-width="2"></polyline>
+        <polyline points="${toLine(alignPts)}" fill="none" stroke="var(--gold-ink)" stroke-width="2" stroke-dasharray="4,3"></polyline>
+      </svg>
+      <div class="row" style="margin-top:6px;font-size:11px">
+        <span><span style="display:inline-block;width:10px;height:2px;background:var(--navy)"></span> Avg fit score</span>
+        <span><span style="display:inline-block;width:10px;height:2px;background:var(--gold-ink)"></span> Avg alignment %</span>
+      </div>`;
+  }
+
+  $("activityFeed").innerHTML=acts.map(a=>`<div class="activity-row">
+    <span class="date">${esc((a.date||"").replace("T"," ").slice(0,16))}</span>
+    <span class="grow"><span class="who">${esc(a.lead_org||"—")}</span> — ${esc(a.text)}</span></div>`).join("")
+    ||`<div class="empty">No activity yet.</div>`;
 }
 
 // ---------- add lead ----------
@@ -550,7 +940,8 @@ function scoreWorking(l){
 }
 async function openLead(id){
   const l=await api("/api/leads/"+id);
-  const tplOpts=templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  const bestTpl=templates.find(t=>t.segment===l.segment);
+  const tplOpts=templates.map(t=>`<option value="${t.id}" ${t===bestTpl?"selected":""}>${esc(t.name)}${t.segment?" 🎯":""}</option>`).join("");
   drawer(`
     <div class="row"><h2 class="grow" style="margin:0">${esc(l.org)}</h2>
       <button class="ghost" onclick="closeDrawer()">✕</button></div>
@@ -630,9 +1021,24 @@ async function openLead(id){
           <button class="ghost" onclick="navigator.clipboard.writeText($('d_subject').value+'\\n\\n'+$('d_body').value);toast('Copied')">Copy instead</button>
         </div>
       </div>
-      <div style="margin-top:10px" id="threadBox">
+    </div>
+
+    <div class="card" style="margin-top:10px;background:var(--gold-soft)">
+      <b style="font-size:13px">💬 WhatsApp</b>
+      <p class="muted" style="margin:4px 0 8px">Sends directly via the WhatsApp Business API (Settings). Needs your own
+        Meta access token — otherwise use the 💬 link elsewhere in the app to message manually instead.</p>
+      <textarea id="d_wa_body" rows="3" placeholder="Message to send…">${l.trigger?`Hi${l.contact?" "+esc(l.contact).split(" ")[0]:""}, following up on ${esc(l.trigger)}.`:""}</textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" onclick="sendWhatsApp('${l.id}','${esc(l.phone||"")}')">Send WhatsApp</button>
+        ${waLink(l.phone)?`<a class="ghost" style="text-decoration:none;padding:8px 12px;border-radius:9px;font-size:12.5px" href="${waLink(l.phone)}" target="_blank">Open in WhatsApp instead</a>`:""}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <b style="font-size:13px">Message thread</b>
+      <div style="margin-top:8px" id="threadBox">
         ${(l.emails||[]).map(m=>`<div class="msg ${m.direction}">
-          <b>${m.direction==="in"?"⇦ From lead":"⇨ Sent"}</b>
+          <b>${m.direction==="in"?"⇦ From lead":"⇨ Sent"}</b> ${m.subject==="WhatsApp message"?"📱":"✉"}
           <span class="muted mono">${esc((m.date||"").slice(0,16).replace("T"," "))}</span><br>
           <b>${esc(m.subject||"")}</b> — ${esc(m.snippet||"")}</div>`).join("")
           ||`<p class="muted">No messages recorded yet. "Scan Gmail" (To-dos tab) links existing threads by email address.</p>`}
@@ -648,8 +1054,12 @@ async function openLead(id){
       </div>
       ${(l.activities||[]).map(a=>`<div class="muted mono" style="padding:3px 0">${a.date} — ${esc(a.text)}</div>`).join("")}
     </div>
-    <div style="margin-top:18px"><button class="ghost" style="color:var(--mut-soft)"
-      onclick="if(confirm('Delete this lead?')){api('/api/leads/${l.id}',{method:'DELETE'}).then(()=>{closeDrawer();loadLeads()})}">Delete lead</button></div>
+    <div class="row" style="margin-top:18px">
+      <button class="ghost" onclick="snoozeLead('${l.id}','${esc(l.snoozed_until||"")}')">
+        💤 ${l.snoozed_until&&l.snoozed_until>today()?"Snoozed until "+esc(l.snoozed_until)+" — change":"Snooze"}</button>
+      <button class="ghost" style="color:var(--mut-soft)"
+        onclick="if(confirm('Delete this lead?')){api('/api/leads/${l.id}',{method:'DELETE'}).then(()=>{closeDrawer();loadLeads()})}">Delete lead</button>
+    </div>
   `);
 }
 async function patchLead(id,patch,log){await api("/api/leads/"+id,{method:"PATCH",
@@ -689,6 +1099,14 @@ async function sendEmail(id){
   btn.disabled=false;btn.textContent="Send from my Gmail";
   if(r.error)return toast("Gmail: "+r.error);
   toast("Sent ✓ — follow-up task created");loadLeads();openLead(id);
+}
+async function sendWhatsApp(id,phone){
+  const body=$("d_wa_body").value.trim();
+  if(!body)return toast("Write a message first");
+  if(!phone)return toast("This lead has no phone number on file");
+  const r=await api("/api/whatsapp/send",{method:"POST",body:JSON.stringify({lead_id:id,to:phone,body})});
+  if(r.error)return toast("WhatsApp: "+r.error);
+  toast("WhatsApp message sent ✓");loadLeads();openLead(id);
 }
 
 // ---------- sources ----------
@@ -761,10 +1179,15 @@ async function loadTemplates(){
   $("tplList").innerHTML=templates.map(t=>`
     <div class="card">
       <div class="row"><input class="grow" value="${esc(t.name)}" style="font-weight:600;border:none;background:none"
-        onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:this.value,body:$('tb_${t.id}').value})})">
+        onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:this.value,body:$('tb_${t.id}').value,segment:$('ts_${t.id}').value})})">
+        <select id="ts_${t.id}" style="width:auto;min-width:180px"
+          onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:'${esc(t.name)}',body:$('tb_${t.id}').value,segment:this.value})})">
+          <option value="">Any service (general)</option>
+          ${SEGMENTS.map(s=>`<option ${s===t.segment?"selected":""}>${s}</option>`).join("")}
+        </select>
         <button class="ghost" style="color:var(--mut-soft)" onclick="api('/api/templates/${t.id}',{method:'DELETE'}).then(loadTemplates)">Delete</button></div>
       <textarea id="tb_${t.id}" rows="9" class="mono" style="margin-top:8px"
-        onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:'${esc(t.name)}',body:this.value})})">${esc(t.body)}</textarea>
+        onchange="api('/api/templates',{method:'POST',body:JSON.stringify({id:'${t.id}',name:'${esc(t.name)}',body:this.value,segment:$('ts_${t.id}').value})})">${esc(t.body)}</textarea>
     </div>`).join("");
 }
 async function newTemplate(){await api("/api/templates",{method:"POST",
@@ -808,7 +1231,8 @@ const SETTING_KEYS=["apollo_api_key","hunter_api_key","apollo_titles","apollo_lo
   "hunter_domains","rss_urls","rss_keywords","reliefweb_appname","reliefweb_query","worldbank_terms",
   "zppa_query","zppa_months_back","wb_tender_terms","wb_tender_countries_only","grants_gov_query",
   "ted_query","ted_days_back","sam_gov_api_key","sam_gov_query","sam_gov_days_back",
-  "gozambiajobs_query","etenders_keywords"];
+  "gozambiajobs_query","etenders_keywords","whatsapp_phone_id","whatsapp_token",
+  "digest_enabled","digest_channel","digest_email","slack_webhook_url"];
 async function loadSettings(){
   settings=await api("/api/settings");
   SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)el.value=settings[k]||""});
@@ -824,6 +1248,17 @@ async function loadSettings(){
   $("gmailStatus").innerHTML=g.client_configured
     ?(g.authorized?"✅ Gmail connected and authorised.":"🟡 client configured — click Connect Gmail to authorise.")
     :"⚠️ GOOGLE_CLIENT_ID/SECRET not set yet — follow the setup steps below/README.";
+  const w=await api("/api/whatsapp/status");
+  $("whatsappStatus").textContent=w.configured
+    ?"✅ WhatsApp Business API configured."
+    :"⚠️ Add your Phone Number ID and access token below to enable sending.";
+  const origin=window.location.origin;
+  const bookmarkletCode="javascript:(function(){var u=encodeURIComponent(location.href),t=encodeURIComponent(document.title);"+
+    "fetch('"+origin+"/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},"+
+    "body:JSON.stringify({org:document.title,notes:'Captured via bookmarklet from '+location.href,url:location.href,"+
+    "trigger:document.title,source:'Manual'})}).then(function(r){return r.json()}).then(function(r){"+
+    "alert(r.error?('Raid Alpha: '+r.error):'Added to Raid Alpha ✓')});})();";
+  $("bookmarkletLink").setAttribute("href",bookmarkletCode);
 }
 async function saveSettingForm(){
   const data={};SETTING_KEYS.forEach(k=>{const el=$("set_"+k);if(el)data[k]=el.value});
@@ -837,6 +1272,11 @@ async function saveActiveServices(){
 }
 async function saveSettings(data){settings=Object.assign(settings,data);
   await api("/api/settings",{method:"POST",body:JSON.stringify(data)})}
+async function sendDigestNow(){
+  $("digestStatus").innerHTML=`<span class="spin">◌</span> sending…`;
+  const r=await api("/api/digest/send-now",{method:"POST"});
+  $("digestStatus").textContent=JSON.stringify(r);
+}
 
 // ---------- drawer ----------
 function drawer(html){$("drawerHost").innerHTML=
@@ -846,8 +1286,9 @@ function closeDrawer(){$("drawerHost").innerHTML=""}
 // ---------- boot ----------
 $("serviceFilter").insertAdjacentHTML("beforeend",
   SEGMENTS.map(s=>`<option value="${s}">${s}</option>`).join(""));
-chips();loadLeads();loadTemplates();loadSources();loadSettings();loadTodos();
+chips();loadLeads();loadTemplates();loadSources();loadSettings();loadTodos();loadPresets();
 setInterval(loadStats,60000);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/static/sw.js").catch(()=>{});
 </script>
 </body>
 </html>

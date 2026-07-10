@@ -2,21 +2,32 @@
 
 Run:  python app.py     then open http://127.0.0.1:8765
 """
+import csv
+import io
+import json
 import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 import bot
 import db
+import digest
 import enrich
 import gmail_bridge
+import whatsapp_bridge
 from sources import REGISTRY, describe
 
 db.init()
 app = FastAPI(title="Raid Alpha")
+# Permissive CORS: the app has no auth boundary of its own (single-user tool
+# behind whoever has the URL), and the capture bookmarklet needs to POST to
+# /api/leads from whatever arbitrary page it's run on.
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 STATIC = Path(__file__).parent / "static"
 
 
@@ -86,6 +97,64 @@ def api_cleanup_expired():
     """Remove active-pipeline leads whose application deadline has passed."""
     removed = db.delete_expired_leads()
     return {"removed": removed}
+
+
+@app.post("/api/leads/bulk")
+async def api_bulk_leads(req: Request):
+    body = await req.json()
+    ids = body.get("ids") or []
+    action = body.get("action")
+    if not ids or not isinstance(ids, list):
+        return JSONResponse({"error": "No leads selected"}, status_code=400)
+    if action == "delete":
+        n = db.bulk_delete(ids)
+        return {"action": "delete", "affected": n}
+    if action == "stage":
+        stage = body.get("value")
+        if stage not in ("New", "Researched", "Contacted", "Replied", "Meeting",
+                          "Proposal", "Won", "Lost"):
+            return JSONResponse({"error": "Invalid stage"}, status_code=400)
+        n = db.bulk_update_stage(ids, stage)
+        return {"action": "stage", "affected": n}
+    return JSONResponse({"error": "Unknown bulk action"}, status_code=400)
+
+
+@app.get("/api/leads/export.csv")
+def api_export_csv():
+    leads = db.list_leads()
+    buf = io.StringIO()
+    fields = ["org", "contact", "role", "email", "phone", "country", "segment", "source",
+              "stage", "score", "alignment_pct", "tentative_value", "deadline", "follow_up",
+              "trigger", "notes", "url", "created_at"]
+    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    for lead in leads:
+        writer.writerow(lead)
+    return Response(
+        content=buf.getvalue(), media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="raid-alpha-leads-{db.today()}.csv"'})
+
+
+@app.get("/api/leads/duplicates")
+def api_duplicates():
+    return db.find_duplicate_groups()
+
+
+@app.post("/api/leads/merge")
+async def api_merge_leads(req: Request):
+    body = await req.json()
+    keep_id, remove_id = body.get("keep_id"), body.get("remove_id")
+    if not keep_id or not remove_id:
+        return JSONResponse({"error": "keep_id and remove_id are required"}, status_code=400)
+    ok = db.merge_leads(keep_id, remove_id)
+    if not ok:
+        return JSONResponse({"error": "Merge failed — check the ids"}, status_code=400)
+    return {"ok": True}
+
+
+@app.get("/api/activities")
+def api_activities(limit: int = 300):
+    return db.list_all_activities(limit)
 
 
 # ---------------- sources ----------------
@@ -169,7 +238,12 @@ def api_cron_run_all(request: Request):
     except Exception as e:
         gmail_result = {"error": str(e)}
     expired_removed = db.delete_expired_leads()
-    return {"sources": results, "gmail": gmail_result, "expired_removed": expired_removed}
+    try:
+        digest_result = digest.send()
+    except Exception as e:
+        digest_result = {"error": str(e)}
+    return {"sources": results, "gmail": gmail_result, "expired_removed": expired_removed,
+            "digest": digest_result}
 
 
 # ---------------- services ----------------
@@ -235,7 +309,7 @@ def api_templates():
 @app.post("/api/templates")
 async def api_save_template(req: Request):
     t = await req.json()
-    tid = db.save_template(t.get("id"), t.get("name", "Template"), t.get("body", ""))
+    tid = db.save_template(t.get("id"), t.get("name", "Template"), t.get("body", ""), t.get("segment", ""))
     return {"id": tid}
 
 
@@ -322,6 +396,36 @@ def api_gmail_sync():
         return JSONResponse({"error": str(e)}, status_code=400)
 
 
+# ---------------- whatsapp ----------------
+
+@app.get("/api/whatsapp/status")
+def api_whatsapp_status():
+    return {"configured": whatsapp_bridge.configured()}
+
+
+@app.post("/api/whatsapp/send")
+async def api_whatsapp_send(req: Request):
+    body = await req.json()
+    lead_id = body.get("lead_id", "")
+    try:
+        result = whatsapp_bridge.send_message(lead_id, body.get("to", ""), body.get("body", ""))
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    lead = db.get_lead(lead_id)
+    if lead and lead["stage"] in ("New", "Researched"):
+        db.update_lead(lead_id, {"stage": "Contacted"}, "WhatsApp message sent")
+    else:
+        db.update_lead(lead_id, {}, "WhatsApp message sent")
+    return result
+
+
+# ---------------- digest ----------------
+
+@app.post("/api/digest/send-now")
+def api_digest_send_now():
+    return digest.send()
+
+
 # ---------------- settings & stats ----------------
 
 @app.get("/api/settings")
@@ -354,6 +458,58 @@ def api_stats():
         "followups_due": len(due),
         "todos_open": len(db.list_todos()),
     }
+
+
+@app.get("/api/stats/by-source")
+def api_stats_by_source():
+    return db.stats_by_source()
+
+
+@app.get("/api/stats/by-segment")
+def api_stats_by_segment():
+    return db.stats_by_segment()
+
+
+@app.get("/api/stats/trend")
+def api_stats_trend(days: int = 30):
+    return db.stats_trend(days)
+
+
+# ---------------- filter presets ----------------
+
+@app.get("/api/filter-presets")
+def api_filter_presets():
+    try:
+        return json.loads(db.get_setting("filter_presets", "[]"))
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
+@app.post("/api/filter-presets")
+async def api_save_filter_preset(req: Request):
+    body = await req.json()
+    name = (body.get("name") or "").strip()
+    if not name:
+        return JSONResponse({"error": "Preset name is required"}, status_code=400)
+    try:
+        presets = json.loads(db.get_setting("filter_presets", "[]"))
+    except (json.JSONDecodeError, TypeError):
+        presets = []
+    presets = [p for p in presets if p.get("name") != name]
+    presets.append({"name": name, "filters": body.get("filters") or {}})
+    db.set_setting("filter_presets", json.dumps(presets))
+    return {"ok": True}
+
+
+@app.delete("/api/filter-presets/{name}")
+def api_delete_filter_preset(name: str):
+    try:
+        presets = json.loads(db.get_setting("filter_presets", "[]"))
+    except (json.JSONDecodeError, TypeError):
+        presets = []
+    presets = [p for p in presets if p.get("name") != name]
+    db.set_setting("filter_presets", json.dumps(presets))
+    return {"ok": True}
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")

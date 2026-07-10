@@ -312,6 +312,92 @@ without it, falling back to the static keyword scoring described above.
 4. **To-dos** tab is your morning checklist: Gmail-extracted asks, auto
    follow-ups, and your own tasks, sorted by due date.
 
+## 4b. Pipeline power tools
+
+**Views** — the Pipeline tab has a List / Board / Calendar switcher:
+- **Board** is a Kanban view, one column per stage — drag a card to a new
+  column to change its stage.
+- **Calendar** shows every lead with an application deadline on a month grid
+  (deadlines within 3 days are highlighted).
+
+**Filters & saved presets** — filter by service, by time (created in the last
+7/30/90 days), search, and stage (the chips). Click **💾 Save filter** to name
+the current combination and recall it later from the **Saved filters**
+dropdown.
+
+**Bulk actions** — click **☑ Select** to enter multi-select mode, tick leads
+on the list view, then bulk-change their stage or bulk-delete from the bar
+that appears.
+
+**Export & duplicates** — **⬇ Export CSV** downloads the current pipeline for
+a board report or offline review. **⧉ Duplicates** groups leads that share an
+email or organisation name and lets you pick which one to keep — its
+activity/email/to-do history absorbs the others.
+
+**Snooze** — from a lead's drawer, **💤 Snooze** hides it from the pipeline
+until a date you choose, without changing its stage (tick **Show snoozed** in
+the toolbar to see snoozed leads again).
+
+**Insights tab** — pipeline value and lead count broken out by service line,
+which sources actually convert to Won (not just volume), a 30-day trend of
+average fit score & alignment %, and a global activity feed across every lead.
+
+**Alignment %** — every lead shows a 🎯 badge separate from its 0–100 fit
+score: purely how strongly its text matched the service it was classified
+under (4+ matching phrases = 100%). The fit score also weighs source trust,
+region and recency — alignment is the "does this actually sound like our
+work" signal in isolation.
+
+## 4c. Daily digest (Slack / email)
+
+Settings → **Daily digest**: turn it on, pick email/Slack/both, and it sends
+automatically once a day as part of the scheduled cron run — active leads,
+pipeline value, new leads today, and follow-ups due.
+
+- **Email**: uses your already-connected Gmail bridge (§3) — just set a
+  recipient address.
+- **Slack**: create an Incoming Webhook at api.slack.com/apps → your app →
+  Incoming Webhooks, paste the URL in.
+
+Use **Send a test digest now** to check it before waiting for the next
+scheduled run.
+
+## 4d. WhatsApp Business API (optional, needs your own Meta account)
+
+Unlike the 💬 links elsewhere in the app (which just open WhatsApp for you to
+send manually), Settings → **WhatsApp Business API** lets you send directly
+from a lead's drawer, the same way Gmail sending works.
+
+Setup (~10 minutes): developers.facebook.com → create a Meta App → add the
+**WhatsApp** product → API Setup gives you a **Phone Number ID**; generate a
+permanent access token under Business Settings → System Users (the default
+24-hour test token will expire). Paste both into Settings.
+
+Two things to know before relying on this:
+- While your Meta app is in Development mode, you can only message numbers
+  added as verified testers — Live mode needs Meta Business verification.
+- Meta only allows free-text messages within 24 hours of the lead last
+  messaging *you*. Outside that window, first-contact outreach needs a
+  pre-approved message template — this integration sends free-text only, so
+  it's best suited to following up with leads who've already replied.
+
+This module is built to Meta's documented API shape; report back if it needs
+adjusting once you're sending through a real account.
+
+## 4e. Install as an app (PWA) & the capture bookmarklet
+
+Raid Alpha is installable — open it in Chrome/Edge (desktop or Android) and
+use "Install app" / "Add to Home Screen"; it'll open in its own window with
+an icon, no browser chrome. A minimal service worker caches the app shell so
+the UI still loads if your connection drops (API data itself always needs a
+live connection).
+
+**Capture bookmarklet** (Settings, bottom of the page): drag the **+ Add to
+Raid Alpha** button to your bookmarks bar. On any page — a tender listing, a
+job posting, a company site — click it to instantly add that page as a
+manual lead (title and URL pre-filled), no need to switch tabs and fill in
+the form yourself.
+
 ## 5. Staying compliant (important)
 
 - Every source here is either an official API/licensed provider, or (in the
@@ -331,15 +417,21 @@ without it, falling back to the static keyword scoring described above.
 ## Files
 
 ```
-app.py            FastAPI server (run this)
-db.py             Postgres storage (creates tables on first run)
-enrich.py         Segment classification, fit scoring, tentative deal values
-bot.py            Gemini-powered service matching (free tier, optional)
-gmail_bridge.py   Gmail web OAuth flow, send, inbox scan → stages & to-dos
-sources/          One module per lead source (add your own — see __init__.py)
-static/index.html The CRM interface
-api/index.py      Vercel entrypoint (re-exports the FastAPI app)
-vercel.json       Vercel routing config
+app.py               FastAPI server (run this)
+db.py                Postgres storage (creates tables on first run)
+enrich.py            Fit scoring, alignment %, tentative deal values
+services_catalog.py  NCE's 12 official service lines — keywords & value ranges
+bot.py               Gemini-powered service matching (free tier, optional)
+gmail_bridge.py      Gmail web OAuth flow, send, inbox scan → stages & to-dos
+whatsapp_bridge.py   WhatsApp Business Cloud API send (needs your own Meta account)
+digest.py            Daily Slack/email pipeline summary, sent via cron
+sources/             One module per lead source (add your own — see __init__.py)
+static/index.html    The CRM interface
+static/manifest.json PWA manifest (installable app)
+static/sw.js         Service worker (offline app-shell caching)
+static/icons/        Generated PWA/favicon icons
+api/index.py         Vercel entrypoint (re-exports the FastAPI app)
+vercel.json          Vercel routing config
 ```
 
 ## Adding your own source

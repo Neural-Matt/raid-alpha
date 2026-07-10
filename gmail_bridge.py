@@ -143,6 +143,19 @@ def send_email(lead_id: str, to: str, subject: str, body: str) -> dict:
     return {"id": sent.get("id"), "threadId": sent.get("threadId")}
 
 
+def send_raw_email(to: str, subject: str, body: str) -> dict:
+    """Send without recording against a lead — used for the daily digest."""
+    from email.mime.text import MIMEText
+    import base64
+    service = _get_service()
+    msg = MIMEText(body)
+    msg["to"] = to
+    msg["subject"] = subject
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    sent = service.users().messages().send(userId="me", body={"raw": raw}).execute()
+    return {"id": sent.get("id"), "threadId": sent.get("threadId")}
+
+
 def _header(payload: dict, name: str) -> str:
     for h in payload.get("headers", []):
         if h.get("name", "").lower() == name.lower():
