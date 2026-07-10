@@ -43,6 +43,33 @@ def api_leads():
     return db.list_leads()
 
 
+# NOTE: literal-path GET routes below must stay declared before
+# /api/leads/{lead_id} — FastAPI matches routes in registration order, so a
+# generic {lead_id} route declared first would swallow requests like
+# /api/leads/export.csv or /api/leads/duplicates as if "export.csv" or
+# "duplicates" were a lead id.
+
+@app.get("/api/leads/export.csv")
+def api_export_csv():
+    leads = db.list_leads()
+    buf = io.StringIO()
+    fields = ["org", "contact", "role", "email", "phone", "country", "segment", "source",
+              "stage", "score", "alignment_pct", "tentative_value", "deadline", "follow_up",
+              "trigger", "notes", "url", "created_at"]
+    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    for lead in leads:
+        writer.writerow(lead)
+    return Response(
+        content=buf.getvalue(), media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="raid-alpha-leads-{db.today()}.csv"'})
+
+
+@app.get("/api/leads/duplicates")
+def api_duplicates():
+    return db.find_duplicate_groups()
+
+
 @app.get("/api/leads/{lead_id}")
 def api_lead(lead_id: str):
     lead = db.get_lead(lead_id)
@@ -117,27 +144,6 @@ async def api_bulk_leads(req: Request):
         n = db.bulk_update_stage(ids, stage)
         return {"action": "stage", "affected": n}
     return JSONResponse({"error": "Unknown bulk action"}, status_code=400)
-
-
-@app.get("/api/leads/export.csv")
-def api_export_csv():
-    leads = db.list_leads()
-    buf = io.StringIO()
-    fields = ["org", "contact", "role", "email", "phone", "country", "segment", "source",
-              "stage", "score", "alignment_pct", "tentative_value", "deadline", "follow_up",
-              "trigger", "notes", "url", "created_at"]
-    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
-    writer.writeheader()
-    for lead in leads:
-        writer.writerow(lead)
-    return Response(
-        content=buf.getvalue(), media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="raid-alpha-leads-{db.today()}.csv"'})
-
-
-@app.get("/api/leads/duplicates")
-def api_duplicates():
-    return db.find_duplicate_groups()
 
 
 @app.post("/api/leads/merge")
