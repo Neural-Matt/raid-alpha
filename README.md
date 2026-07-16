@@ -6,29 +6,34 @@ locally against any Postgres database (including your Supabase project).
 
 What it does:
 
-0. **Classifies every lead into one of NCE's 12 official service lines**
-   (Custom Software Development, AI Solutions & Intelligent Automation, Data
+0. **Classifies every lead into one of NCE's 22 official service lines**:
+   Custom Software Development, AI Solutions & Intelligent Automation, Data
    Analytics/BI/Research, Cloud & Infrastructure, Call Center/VoIP,
    Healthcare & Pharmacy Tech, Insurance Tech, Business Process Automation,
    Web & Mobile App Development, UI/UX Design, Networking & Connectivity,
-   Training & Capacity Building) — see **Settings → "Which services does
-   Neural Cloud offer?"** to toggle which of the 12 are currently in scope.
-   Unticking a service excludes it from classification (a lead can only ever
-   land in a service you've left checked) and every keyword-driven source
-   below defaults to searching across whichever services are active. The
-   full keyword catalog for all 12 lives in `services_catalog.py` — it's the
-   single source of truth every source module and the scorer both read from.
+   Training & Capacity Building, Contact Centre & Customer Experience,
+   Business Process Outsourcing, Sales/Trade & Field Operations, Research &
+   Customer Insights, Data Analytics & MIS, Debt Collection & Revenue
+   Recovery, Payroll & Workforce Administration, Technology & Digital
+   Solutions, IT Infrastructure & Support, and Data Protection/Quality &
+   Compliance Support — see **Settings → "Which services does Neural Cloud
+   offer?"** to toggle which are currently in scope. Unticking a service
+   excludes it from classification (a lead can only ever land in a service
+   you've left checked) and every keyword-driven source below defaults to
+   searching across whichever services are active. The full keyword catalog
+   for all 22 lives in `services_catalog.py` — it's the single source of
+   truth every source module and the scorer both read from.
 1. **Pull leads** at the press of a button from legal, official sources:
    - ReliefWeb API (consultancy postings from NGOs/UN agencies — a curated
-     slice of NCE's 12 service lines weighted toward what that sector buys —
+     slice of NCE's 22 service lines weighted toward what that sector buys —
      with application deadline and how-to-apply text where the posting has it)
    - World Bank Projects API (active funded projects across statistics,
      health, education, digital and governance in your region)
-   - World Bank Procurement Notices API (live open tenders across all 12
+   - World Bank Procurement Notices API (live open tenders across all 22
      service lines — real deadlines and named procurement contacts with
      email/phone, straight from the notice)
    - ZPPA OCDS bulk data (open Zambian government tenders, filtered to
-     whichever of NCE's 12 service lines are active, with deadline +
+     whichever of NCE's 22 service lines are active, with deadline +
      submission method where published)
    - Grants.gov (US federal funding opportunities — many open to international
      applicants — enriched with the actual grants contact, deadline, funding
@@ -44,12 +49,12 @@ What it does:
      email/phone; a lightweight, transparently-identified public-page reader
      since no API exists — see "A note on scraping" below)
    - eTenders South Africa (National Treasury's tender portal — live open
-     tenders nationwide across all 12 service lines, with named contacts,
+     tenders nationwide across all 22 service lines, with named contacts,
      email, phone, bid documents and closing dates; reads the same public
      JSON the portal's own search page uses, no formal API exists — see
      "A note on scraping" below)
    - GoZambiaJobs (Zambia's largest job board — flags companies hiring across
-     any of NCE's 12 service lines as a complementary-support signal; a
+     any of NCE's 22 service lines as a complementary-support signal; a
      lightweight, transparently-identified public-page reader since no API
      exists — see "A note on scraping" below)
    - Any RSS/Atom feeds you add (tender boards, Google Alerts = the widest net)
@@ -420,7 +425,7 @@ the form yourself.
 app.py               FastAPI server (run this)
 db.py                Postgres storage (creates tables on first run)
 enrich.py            Fit scoring, alignment %, tentative deal values
-services_catalog.py  NCE's 12 official service lines — keywords & value ranges
+services_catalog.py  NCE's 22 official service lines — keywords & value ranges
 bot.py               Gemini-powered service matching (free tier, optional)
 gmail_bridge.py      Gmail web OAuth flow, send, inbox scan → stages & to-dos
 whatsapp_bridge.py   WhatsApp Business Cloud API send (needs your own Meta account)

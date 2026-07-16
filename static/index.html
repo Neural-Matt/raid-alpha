@@ -433,7 +433,7 @@
     <div class="card">
       <h2>Which services does Neural Cloud offer?</h2>
       <p class="muted" style="margin:0 0 10px">Every pulled lead is classified into one of these
-        12 service lines and valued accordingly. Untick any you're not taking on right now —
+        22 service lines and valued accordingly. Untick any you're not taking on right now —
         leads will only be matched against the ones left checked.</p>
       <div id="serviceToggleList" class="grid2"></div>
       <div style="margin-top:12px"><button class="ghost" onclick="saveActiveServices()">Save services</button></div>
@@ -455,8 +455,8 @@
         <label>ReliefWeb query override (optional)<input id="set_reliefweb_query"></label>
         <label style="grid-column:1/-1">World Bank search terms (comma-separated)
           <input id="set_worldbank_terms" placeholder="statistics, health systems, monitoring"></label>
-        <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated — blank = all 12 services)
-          <input id="set_zppa_query" placeholder="Leave blank to filter on all 12 NCE service lines"></label>
+        <label style="grid-column:1/-1">ZPPA keyword filter (comma-separated — blank = all 22 services)
+          <input id="set_zppa_query" placeholder="Leave blank to filter on all 22 NCE service lines"></label>
         <label>ZPPA months back<input id="set_zppa_months_back" placeholder="1"></label>
         <label style="grid-column:1/-1">World Bank tender search terms (comma-separated)
           <input id="set_wb_tender_terms" placeholder="monitoring and evaluation, software development, network…"></label>
@@ -470,10 +470,10 @@
         <label>SAM.gov search keyword (single phrase — API doesn't support OR here)
           <input id="set_sam_gov_query" placeholder="monitoring and evaluation"></label>
         <label>SAM.gov days back<input id="set_sam_gov_days_back" placeholder="30"></label>
-        <label style="grid-column:1/-1">GoZambiaJobs keyword filter (comma-separated — blank = all 12 services)
-          <input id="set_gozambiajobs_query" placeholder="Leave blank to filter on all 12 NCE service lines"></label>
-        <label style="grid-column:1/-1">eTenders SA keyword filter (comma-separated — blank = all 12 services)
-          <input id="set_etenders_keywords" placeholder="Leave blank to filter on all 12 NCE service lines"></label>
+        <label style="grid-column:1/-1">GoZambiaJobs keyword filter (comma-separated — blank = all 22 services)
+          <input id="set_gozambiajobs_query" placeholder="Leave blank to filter on all 22 NCE service lines"></label>
+        <label style="grid-column:1/-1">eTenders SA keyword filter (comma-separated — blank = all 22 services)
+          <input id="set_etenders_keywords" placeholder="Leave blank to filter on all 22 NCE service lines"></label>
       </div>
       <div style="margin-top:12px"><button class="btn" onclick="saveSettingForm()">Save settings</button></div>
     </div>
@@ -501,6 +501,16 @@ const SERVICE_CATALOG=[
   {key:"design_ux",name:"UI/UX Design & Product Experience"},
   {key:"networking_connectivity",name:"Networking, Connectivity & Managed IT Solutions"},
   {key:"training_support",name:"Training, Support & Capacity Building"},
+  {key:"contact_centre_cx",name:"Contact Centre and Customer Experience"},
+  {key:"bpo",name:"Business Process Outsourcing"},
+  {key:"sales_field_ops",name:"Sales, Trade and Field Operations"},
+  {key:"research_insights",name:"Research and Customer Insights"},
+  {key:"data_mis",name:"Data Analytics and MIS"},
+  {key:"debt_collection",name:"Debt Collection and Revenue Recovery"},
+  {key:"payroll_workforce",name:"Payroll and Workforce Administration"},
+  {key:"tech_digital_solutions",name:"Technology and Digital Solutions"},
+  {key:"it_infrastructure_support",name:"IT Infrastructure and Support"},
+  {key:"data_protection_compliance",name:"Data Protection, Quality and Compliance Support"},
 ];
 const SEGMENTS=SERVICE_CATALOG.map(s=>s.name);
 let leads=[],templates=[],settings={},stageFilter="All";

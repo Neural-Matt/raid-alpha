@@ -1,4 +1,4 @@
-"""Neural Cloud Enterprise's 12 official service lines — single source of truth.
+"""Neural Cloud Enterprise's 22 official service lines — single source of truth.
 
 Used by:
   - enrich.py       to classify every lead into a service and estimate its value
@@ -169,6 +169,112 @@ SERVICES = {
             "trainer", "training officer",
         ],
     },
+    "contact_centre_cx": {
+        "name": "Contact Centre and Customer Experience",
+        "value_range": (15000, 150000),
+        "keywords": [
+            "inbound customer support", "outbound call centre", "outbound call center",
+            "customer acquisition", "customer retention", "win-back campaign",
+            "customer verification call", "welcome call campaign", "helpdesk operations",
+            "complaint management", "telemarketing", "contact centre operations",
+            "contact center operations", "24/7 contact centre", "24/7 contact center",
+            "customer experience", "customer care",
+        ],
+    },
+    "bpo": {
+        "name": "Business Process Outsourcing",
+        "value_range": (15000, 150000),
+        "keywords": [
+            "back-office processing", "back office processing", "merchant onboarding",
+            "know your customer", "kyc verification", "data entry and validation",
+            "data cleansing", "transaction processing", "application processing",
+            "dispute management", "case management", "document digitisation",
+            "document digitization", "administrative process outsourcing",
+            "business process outsourcing",
+        ],
+    },
+    "sales_field_ops": {
+        "name": "Sales, Trade and Field Operations",
+        "value_range": (10000, 100000),
+        "keywords": [
+            "merchant acquisition", "agent acquisition", "mass-market onboarding",
+            "field sales force", "territory management", "route management",
+            "merchant activation", "merchant reactivation", "retail audit",
+            "outlet verification", "branding audit", "visibility audit",
+            "liquidity monitoring", "field compliance", "mystery shopping",
+            "market mapping", "census exercise",
+        ],
+    },
+    "research_insights": {
+        "name": "Research and Customer Insights",
+        "value_range": (5000, 50000),
+        "keywords": [
+            "market research", "customer satisfaction survey", "net promoter score",
+            "computer-assisted telephone interviewing", "computer-assisted personal interviewing",
+            "qualitative research", "quantitative research", "customer sentiment analysis",
+            "closed-loop customer recovery", "competitor intelligence", "market intelligence",
+        ],
+    },
+    "data_mis": {
+        "name": "Data Analytics and MIS",
+        "value_range": (5000, 40000),
+        "keywords": [
+            "real-time performance reporting", "campaign analytics", "workforce reporting",
+            "productivity reporting", "sales conversion analysis", "customer segmentation",
+            "data reconciliation", "data quality assurance", "executive reports",
+            "management reports", "operational forecasting", "business intelligence dashboard",
+        ],
+    },
+    "debt_collection": {
+        "name": "Debt Collection and Revenue Recovery",
+        "value_range": (8000, 80000),
+        "keywords": [
+            "debt collection", "early-stage collections", "payment reminder",
+            "arrears follow-up", "debt rehabilitation", "field collections",
+            "promise-to-pay", "recovery performance reporting", "revenue recovery",
+        ],
+    },
+    "payroll_workforce": {
+        "name": "Payroll and Workforce Administration",
+        "value_range": (5000, 45000),
+        "keywords": [
+            "outsourced payroll", "attendance management", "timesheet management",
+            "contractor payment administration", "field-force payment", "commission calculation",
+            "incentive calculation", "payroll analytics", "employee records administration",
+            "statutory payroll",
+        ],
+    },
+    "tech_digital_solutions": {
+        "name": "Technology and Digital Solutions",
+        "value_range": (10000, 90000),
+        "keywords": [
+            "customer relationship management system", "call centre dialler", "call center dialer",
+            "workflow platform", "case-management platform", "bulk payment solution",
+            "digital onboarding system", "business workspace platform", "learning management system",
+            "expo academy", "automation of manual business processes",
+        ],
+    },
+    "it_infrastructure_support": {
+        "name": "IT Infrastructure and Support",
+        "value_range": (5000, 50000),
+        "keywords": [
+            "network management", "server management", "contact centre technology deployment",
+            "hardware support", "software support", "user access administration",
+            "security administration", "it asset management", "it inventory management",
+            "system troubleshooting", "firewall management", "endpoint security management",
+        ],
+    },
+    "data_protection_compliance": {
+        "name": "Data Protection, Quality and Compliance Support",
+        "value_range": (5000, 40000),
+        "keywords": [
+            "data privacy implementation", "information security controls",
+            "quality assurance call monitoring", "call monitoring", "process audit",
+            "regulatory compliance support", "operational compliance support",
+            "secure data handling", "standard operating procedure development",
+            "sop development",
+        ],
+    },
 }
 
 ALL_KEYS = list(SERVICES.keys())
@@ -177,7 +283,7 @@ ALL_KEYS = list(SERVICES.keys())
 def active_keys(settings: dict) -> list[str]:
     """Which service keys the user currently wants leads classified/filtered against.
 
-    Defaults to all 12 if unset, empty, or every listed key is unrecognized
+    Defaults to all 22 if unset, empty, or every listed key is unrecognized
     (e.g. stale keys from a renamed service) — never silently classifies
     against an empty set.
     """
